@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Biashara Score - AWS Serverless Architecture
+  Provisions DynamoDB Tables, S3 Upload Bucket, Cognito User Pool, and API Gateway.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: python3.11
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        DYNAMODB_TRANSACTIONS_TABLE: !Ref TransactionsTable
+        DYNAMODB_BUSINESS_TABLE: !Ref BusinessesTable
+        DYNAMODB_DEBTS_TABLE: !Ref DebtsTable
+        S3_STATEMENTS_BUCKET: !Ref StatementsBucket
+        MOCK_AWS: 'false'
+
+Resources:
+  # ============================================================================
+  # S3 Storage: Statement Uploads & Generated PDF Reports
+  # ============================================================================
+  StatementsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'biashara-statements-${Environment}-${AWS::AccountId}'
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST]
+            AllowedOrigins: ['*']
+            MaxAge: 3000
+
+  # ============================================================================
+  # DynamoDB: 3 Core Tables (On-Demand Capacity)
+  # ============================================================================
+  BusinessesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'biashara-businesses-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: business_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: business_id
+          KeyType: HASH
+
+  TransactionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'biashara-transactions-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: completion_time_receipt
+          AttributeType: S
+        - AttributeName: business_category
+          AttributeType: S
+        - AttributeName: completion_time
+          AttributeType: S
+      KeySchema:
+        - AttributeName: business_id
+          KeyType: HASH
+        - AttributeName: completion_time_receipt
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: CategoryTimeIndex
+          KeySchema:
+            - AttributeName: business_category
+              KeyType: HASH
+            - AttributeName: completion_time
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  DebtsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'biashara-debts-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: business_id
+          AttributeType: S
+        - AttributeName: debt_id
+          AttributeType: S
+        - AttributeName: debtor_phone
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: business_id
+          KeyType: HASH
+        - AttributeName: debt_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: DebtorPhoneIndex
+          KeySchema:
+            - AttributeName: debtor_phone
+              KeyType: HASH
+            - AttributeName: status
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  # ============================================================================
+  # Amazon API Gateway (HTTP API)
+  # ============================================================================
+  BiasharaHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Name: !Sub 'biashara-api-${Environment}'
+      CorsConfiguration:
+        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+        AllowHeaders: ['*']
+        AllowOrigins: ['*']
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API Gateway Endpoint URL
+    Value: !Sub 'https://${BiasharaHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  StatementsBucketName:
+    Description: S3 Bucket for Statement Uploads
+    Value: !Ref StatementsBucket

@@ -1,0 +1,151 @@
+Receipt No.,Completion Time,Details,Transaction Status,Paid In,Withdrawn,Balance
+SK01YUUM7K,2026-09-01 12:49:00,Customer Payment to Till 789123 - John Otieno 254731829405,Completed,1606.98,,50106.98
+SK02X1THYE,2026-09-01 20:18:00,Customer Payment to Till 789123 - Peter Kamau 254722998877,Completed,1626.27,,51733.25
+SK03GY3TXH,2026-09-02 05:04:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,2233.15,,53966.40
+SK04Y0JQRL,2026-09-02 11:27:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,1198.97,,55165.37
+SK055QBUGB,2026-09-02 18:18:00,Customer Transfer to 254722001122 - Landlord Joseph Njuguna (Shop Rent September),Completed,,15000.00,40165.37
+SK067BQRKW,2026-09-03 03:01:00,Customer Transfer from 254719283746 - Teacher Maina (Maina Duka Debt Settled),Completed,1526.05,,41691.42
+SK07ZKXZ93,2026-09-03 04:07:00,Customer Payment to Till 789123 - Mercy Achieng 254790887766,Completed,2145.52,,43836.94
+SK08R9DANX,2026-09-03 06:20:00,Customer Payment to Till 789123 - Kevin Kiprop 254799001122,Completed,681.54,,44518.48
+SK09GF0VY6,2026-09-03 11:10:00,Buy Goods to 771234 - Bidco Africa Distributors,Completed,,2479.42,42039.06
+SK1083Z5DT,2026-09-03 15:47:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,1498.78,,43537.84
+SK11Y6D9RV,2026-09-03 19:27:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,3777.14,,47314.98
+SK12PECKU9,2026-09-03 21:48:00,Customer Payment to Till 789123 - Brian Ochieng 254740112233,Completed,1344.38,,48659.36
+SK134YN350,2026-09-04 01:38:00,Airtime Purchase for 254729112233,Completed,,300.00,48359.36
+SK14L6RGFF,2026-09-04 02:57:00,Customer Transfer from 254738492019 - George Kinyua (Fundi George debt repayment),Completed,1525.14,,49884.50
+SK1511G2HT,2026-09-04 07:18:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,2958.46,,52842.96
+SK16J308W2,2026-09-04 14:30:00,Customer Transfer to 254729112233 - Duka Owner Personal Draw,Completed,,3500.00,49342.96
+SK17RLFAS8,2026-09-04 19:37:00,Customer Transfer from 254738492019 - George Kinyua (Fundi George debt repayment),Completed,682.60,,50025.56
+SK18AE947G,2026-09-04 20:55:00,Customer Transfer to 254729112233 - Duka Owner Personal Draw,Completed,,5000.00,45025.56
+SK19N3HW5E,2026-09-05 05:16:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,2131.35,,47156.91
+SK207Q5BU0,2026-09-05 13:39:00,Airtime Purchase for 254729112233,Completed,,100.00,47056.91
+SK21RNKNS2,2026-09-05 22:01:00,Customer Transfer from 254738492019 - George Kinyua (Fundi George debt repayment),Completed,2011.24,,49068.15
+SK22XS9CZK,2026-09-06 05:11:00,Customer Payment to Till 789123 - Mercy Achieng 254790887766,Completed,3214.48,,52282.63
+SK23C2550T,2026-09-06 09:03:00,Customer Payment to Till 789123 - Samuel Ndung'u 254711223344,Completed,2902.55,,55185.18
+SK24B1VAJ0,2026-09-06 12:51:00,Customer Payment to Till 789123 - Kevin Kiprop 254799001122,Completed,785.54,,55970.72
+SK25V59U0C,2026-09-06 18:28:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,526.32,,56497.04
+SK26EFSLEF,2026-09-06 23:02:00,Customer Payment to Till 789123 - Samuel Ndung'u 254711223344,Completed,2009.33,,58506.37
+SK27N6VGA9,2026-09-07 00:16:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,882.90,,59389.27
+SK28F06J5L,2026-09-07 05:00:00,Customer Payment to Till 789123 - Collins Barasa 254748291034,Completed,3544.33,,62933.60
+SK2975PHL8,2026-09-07 11:26:00,Customer Payment to Till 789123 - Kevin Kiprop 254799001122,Completed,3587.30,,66520.90
+SK3070ADQ6,2026-09-07 15:12:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,973.09,,67493.99
+SK31SVEC63,2026-09-07 19:44:00,Pay Bill to 888888 - KPLC PREPAID Acc. 14283949740,Completed,,500.00,66993.99
+SK32EWP7WW,2026-09-07 23:27:00,Customer Payment to Till 789123 - John Otieno 254731829405,Completed,960.80,,67954.79
+SK33FBN0G5,2026-09-08 04:31:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,3226.20,,71180.99
+SK34F3FS1X,2026-09-08 13:19:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,1417.43,,72598.42
+SK35CYN7ZM,2026-09-08 21:43:00,Pay Bill to 888888 - KPLC PREPAID Acc. 14283957952,Completed,,500.00,72098.42
+SK36MCC3NH,2026-09-09 04:23:00,Customer Payment to Till 789123 - Collins Barasa 254748291034,Completed,1100.60,,73199.02
+SK37TK2V6E,2026-09-09 08:35:00,Customer Transfer from 254710293847 - Pauline Ndinda (Duka loan cleared),Completed,1771.20,,74970.22
+SK38QLKV1Q,2026-09-09 12:18:00,Customer Payment to Till 789123 - Kevin Kiprop 254799001122,Completed,2136.89,,77107.11
+SK399AN4HM,2026-09-09 16:49:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,606.92,,77714.03
+SK40LKM0JB,2026-09-09 21:58:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,1341.46,,79055.49
+SK41R1P6P8,2026-09-10 05:07:00,Pay Bill to 444444 - Nairobi City Water Acc. 703390,Completed,,600.00,78455.49
+SK42LR0QFH,2026-09-10 07:27:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,730.02,,79185.51
+SK43WGN64C,2026-09-10 11:04:00,Buy Goods to 654321 - Pembe Flour Mills,Completed,,7739.96,71445.55
+SK448F1ZW0,2026-09-10 17:51:00,Customer Payment to Till 789123 - Brian Ochieng 254740112233,Completed,491.27,,71936.82
+SK4580BBFY,2026-09-10 21:17:00,Customer Payment to Till 789123 - Esther Nyambura 254720918273,Completed,3234.05,,75170.87
+SK46GGCPQN,2026-09-10 22:55:00,Airtime Purchase for 254729112233,Completed,,300.00,74870.87
+SK47DAFYYY,2026-09-11 01:47:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,2682.27,,77553.14
+SK48VREDR7,2026-09-11 07:24:00,Customer Payment to Till 789123 - Esther Nyambura 254720918273,Completed,1123.36,,78676.50
+SK49LMSEXW,2026-09-11 08:36:00,Buy Goods to 901245 - Kevian Kenya Juices,Completed,,1846.26,76830.24
+SK5089ZNCL,2026-09-11 16:47:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,525.90,,77356.14
+SK517W34EC,2026-09-12 01:02:00,Customer Payment to Till 789123 - Daniel Mutua 254794820193,Completed,834.74,,78190.88
+SK52XX26EU,2026-09-12 08:24:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,1856.60,,80047.48
+SK532MFMQW,2026-09-12 13:35:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,1457.25,,81504.73
+SK54XQ1YU3,2026-09-12 16:50:00,Buy Goods to 654321 - Pembe Flour Mills,Completed,,7407.93,74096.80
+SK55RM6K38,2026-09-12 18:05:00,Buy Goods to 890123 - Unga Farm Care Ltd,Completed,,4606.79,69490.01
+SK56QHZ78G,2026-09-13 01:24:00,Pay Bill to 888888 - KPLC PREPAID Acc. 14283987934,Completed,,1500.00,67990.01
+SK57983J2B,2026-09-13 09:39:00,Buy Goods to 441098 - Kapa Oil Refineries,Completed,,4253.11,63736.90
+SK58TD94R0,2026-09-13 14:10:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,2642.67,,66379.57
+SK59Z28CDK,2026-09-13 21:50:00,Customer Transfer from 254719283746 - Teacher Maina (Maina Duka Debt Settled),Completed,1688.73,,68068.30
+SK606C9N22,2026-09-13 23:05:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,582.82,,68651.12
+SK617QG6U9,2026-09-14 07:38:00,Customer Payment to Till 789123 - John Otieno 254731829405,Completed,2289.50,,70940.62
+SK628F8YJ9,2026-09-14 14:26:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,1652.94,,72593.56
+SK63AQL5ZW,2026-09-14 22:36:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,2827.41,,75420.97
+SK640Y1LW8,2026-09-15 04:48:00,Buy Goods to 332110 - Farmers Choice Sausages,Completed,,3818.50,71602.47
+SK6519LTEB,2026-09-15 12:39:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,1152.83,,72755.30
+SK660H4R6K,2026-09-15 19:22:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,1643.51,,74398.81
+SK67TUN8QN,2026-09-16 03:29:00,Airtime Purchase for 254729112233,Completed,,500.00,73898.81
+SK68S910UC,2026-09-16 11:53:00,Customer Payment to Till 789123 - Esther Nyambura 254720918273,Completed,752.93,,74651.74
+SK69HH2B1H,2026-09-16 14:03:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,2528.04,,77179.78
+SK705J5CNE,2026-09-16 22:23:00,Customer Payment to Till 789123 - Kevin Kiprop 254799001122,Completed,3033.33,,80213.11
+SK71494SZ5,2026-09-17 06:36:00,Buy Goods to 332110 - Farmers Choice Sausages,Completed,,2828.08,77385.03
+SK72FZULUG,2026-09-17 11:19:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,3050.91,,80435.94
+SK73HCHSWF,2026-09-17 19:03:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,3380.55,,83816.49
+SK74UF06MX,2026-09-18 01:26:00,Customer Transfer from 254747283910 - Irene Kerubo (Mama Brayo monthly credit payment),Completed,1095.37,,84911.86
+SK75UGBXRA,2026-09-18 06:18:00,Customer Payment to Till 789123 - Mercy Achieng 254790887766,Completed,3182.77,,88094.63
+SK76PHKKA9,2026-09-18 14:43:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,1082.79,,89177.42
+SK778VXT36,2026-09-18 23:25:00,Customer Payment to Till 789123 - Kevin Kiprop 254799001122,Completed,1574.13,,90751.55
+SK78WFB9TM,2026-09-19 04:11:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,779.54,,91531.09
+SK79X6H0QA,2026-09-19 07:38:00,Customer Transfer to 254722001122 - Landlord Joseph Njuguna (Shop Rent October),Completed,,15000.00,76531.09
+SK8085813U,2026-09-19 10:12:00,Customer Payment to Till 789123 - Agnes Wairimu 254718273645,Completed,2464.43,,78995.52
+SK814RZR1D,2026-09-19 18:29:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,1891.89,,80887.41
+SK82GMRKW0,2026-09-20 00:35:00,Buy Goods to 332110 - Farmers Choice Sausages,Completed,,1762.14,79125.27
+SK830D0EPY,2026-09-20 01:40:00,Customer Transfer from 254738492019 - George Kinyua (Fundi George debt repayment),Completed,2368.65,,81493.92
+SK84CZE3Q1,2026-09-20 03:58:00,Customer Payment to Till 789123 - Peter Kamau 254722998877,Completed,1504.36,,82998.28
+SK85QC2B1Z,2026-09-20 10:49:00,Pay Bill to 888888 - KPLC PREPAID Acc. 14283966338,Completed,,800.00,82198.28
+SK86X3JK99,2026-09-20 12:27:00,Customer Transfer to 254729112233 - Duka Owner Personal Draw,Completed,,2500.00,79698.28
+SK87DPAJJG,2026-09-20 17:14:00,Customer Payment to Till 789123 - Kevin Kiprop 254799001122,Completed,2928.86,,82627.14
+SK88PVZJXY,2026-09-20 18:50:00,Customer Transfer from 254728192837 - Dennis Omondi (Mama Boi Debt Clearance),Completed,1496.05,,84123.19
+SK89KWZTMT,2026-09-21 01:22:00,Buy Goods to 771234 - Bidco Africa Distributors,Completed,,2215.81,81907.38
+SK902EJLJW,2026-09-21 03:53:00,Buy Goods to 890123 - Unga Farm Care Ltd,Completed,,6756.41,75150.97
+SK91UDM5AY,2026-09-21 08:21:00,Pay Bill to 444444 - Nairobi City Water Acc. 544456,Completed,,1200.00,73950.97
+SK92L5ZR98,2026-09-21 12:45:00,Buy Goods to 901245 - Kevian Kenya Juices,Completed,,1557.43,72393.54
+SK93ULWFAS,2026-09-21 19:14:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,651.37,,73044.91
+SK94BMNAF0,2026-09-21 21:19:00,Customer Payment to Till 789123 - Peter Kamau 254722998877,Completed,2678.51,,75723.42
+SK95G82ZJJ,2026-09-22 05:00:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,1173.02,,76896.44
+SK96L0360C,2026-09-22 09:37:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,825.82,,77722.26
+SK97BRFQ0T,2026-09-22 16:06:00,Buy Goods to 332110 - Farmers Choice Sausages,Completed,,2194.27,75527.99
+SK98T8M83H,2026-09-23 00:42:00,Customer Payment to Till 789123 - Collins Barasa 254748291034,Completed,3305.58,,78833.57
+SK992U0T0N,2026-09-23 09:32:00,Customer Payment to Till 789123 - Brian Ochieng 254740112233,Completed,2074.00,,80907.57
+SK100NH2SSJ,2026-09-23 14:12:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,1468.13,,82375.70
+SK101NC8FVJ,2026-09-23 21:23:00,Pay Bill to 444444 - Nairobi City Water Acc. 704907,Completed,,1200.00,81175.70
+SK102B31FGJ,2026-09-24 05:10:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,2550.06,,83725.76
+SK1033UMNTS,2026-09-24 14:00:00,Customer Transfer from 254710293847 - Pauline Ndinda (Duka loan cleared),Completed,1237.43,,84963.19
+SK104CK7MF9,2026-09-24 21:38:00,Buy Goods to 901245 - Kevian Kenya Juices,Completed,,1481.92,83481.27
+SK105W0GWHW,2026-09-24 22:45:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,3514.64,,86995.91
+SK1067QA11D,2026-09-25 00:04:00,Buy Goods to 542100 - Brookside Dairies Ltd,Completed,,3925.87,83070.04
+SK107F490PW,2026-09-25 06:43:00,Buy Goods to 890123 - Unga Farm Care Ltd,Completed,,4845.23,78224.81
+SK108MA0Z8B,2026-09-25 15:29:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,2484.35,,80709.16
+SK109HS5WM2,2026-09-25 20:42:00,Buy Goods to 441098 - Kapa Oil Refineries,Completed,,4300.98,76408.18
+SK110RFK8D7,2026-09-26 04:28:00,Customer Payment to Till 789123 - Collins Barasa 254748291034,Completed,513.16,,76921.34
+SK111BF4V8D,2026-09-26 07:20:00,Customer Payment to Till 789123 - Collins Barasa 254748291034,Completed,1739.63,,78660.97
+SK112EK5HKB,2026-09-26 12:54:00,Customer Payment to Till 789123 - Agnes Wairimu 254718273645,Completed,1251.51,,79912.48
+SK1130D30B2,2026-09-26 17:10:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,1281.30,,81193.78
+SK1146WB3FA,2026-09-26 21:37:00,Airtime Purchase for 254729112233,Completed,,500.00,80693.78
+SK115AY943D,2026-09-27 04:58:00,Customer Transfer from 254710293847 - Pauline Ndinda (Duka loan cleared),Completed,2399.17,,83092.95
+SK116MK4R5P,2026-09-27 10:31:00,Buy Goods to 901245 - Kevian Kenya Juices,Completed,,2097.21,80995.74
+SK117U5712D,2026-09-27 12:06:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,3687.81,,84683.55
+SK118W97PGD,2026-09-27 14:39:00,Buy Goods to 771234 - Bidco Africa Distributors,Completed,,3107.63,81575.92
+SK1191P9ZJZ,2026-09-27 17:08:00,Pay Bill to 888888 - KPLC PREPAID Acc. 14283945659,Completed,,1500.00,80075.92
+SK1206ULLAJ,2026-09-27 23:23:00,Customer Transfer from 254791827364 - Jackson Kiprono (Boda Kiprono credit pay),Completed,796.24,,80872.16
+SK121NKVV5Y,2026-09-28 03:11:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,1744.87,,82617.03
+SK1227HVGX0,2026-09-28 05:19:00,Buy Goods to 441098 - Kapa Oil Refineries,Completed,,3719.80,78897.23
+SK123DQGZJN,2026-09-28 10:38:00,Customer Payment to Till 789123 - Jane Wanjiku 254712345678,Completed,2730.65,,81627.88
+SK1248ZWZSM,2026-09-28 16:49:00,Customer Payment to Till 789123 - Agnes Wairimu 254718273645,Completed,3286.91,,84914.79
+SK125QRG409,2026-09-28 23:56:00,Customer Transfer from 254710293847 - Pauline Ndinda (Duka loan cleared),Completed,2043.31,,86958.10
+SK126NFSEWR,2026-09-29 05:07:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,3640.81,,90598.91
+SK127DZVBVT,2026-09-29 10:48:00,Customer Payment to Till 789123 - Peter Kamau 254722998877,Completed,948.26,,91547.17
+SK128PBQNJG,2026-09-29 15:11:00,Customer Payment to Till 789123 - Daniel Mutua 254794820193,Completed,2048.61,,93595.78
+SK129P2WQR8,2026-09-29 20:21:00,Customer Payment to Till 789123 - Brian Ochieng 254740112233,Completed,3372.36,,96968.14
+SK130TE8FCX,2026-09-30 03:53:00,Customer Payment to Till 789123 - Peter Kamau 254722998877,Completed,735.46,,97703.60
+SK1311UETYA,2026-09-30 09:24:00,Customer Payment to Till 789123 - David Mwangi 254701234567,Completed,1918.67,,99622.27
+SK132A2MPGE,2026-09-30 13:54:00,Customer Transfer from 254738492019 - George Kinyua (Fundi George debt repayment),Completed,1367.84,,100990.11
+SK133HT9XUJ,2026-09-30 16:01:00,Buy Goods to 890123 - Unga Farm Care Ltd,Completed,,5662.15,95327.96
+SK134NXZ0KJ,2026-09-30 17:41:00,Customer Payment to Till 789123 - Mercy Achieng 254790887766,Completed,629.35,,95957.31
+SK135XVN3GQ,2026-09-30 18:59:00,Customer Payment to Till 789123 - Mercy Achieng 254790887766,Completed,2610.61,,98567.92
+SK1361QJXD8,2026-09-30 23:31:00,Customer Transfer to 254729112233 - Duka Owner Personal Draw,Completed,,2500.00,96067.92
+SK137F5NPJG,2026-10-01 07:03:00,Customer Payment to Till 789123 - Faith Chebet 254733445566,Completed,465.53,,96533.45
+SK13853R4KQ,2026-10-01 09:32:00,Customer Payment to Till 789123 - Samuel Ndung'u 254711223344,Completed,3346.28,,99879.73
+SK139S98KFZ,2026-10-01 11:09:00,Customer Payment to Till 789123 - Esther Nyambura 254720918273,Completed,880.17,,100759.90
+SK140B1FD1Y,2026-10-01 13:25:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,752.19,,101512.09
+SK141JE1H96,2026-10-01 18:58:00,Customer Payment to Till 789123 - Grace Muthoni 254723456789,Completed,1544.76,,103056.85
+SK142YMG07U,2026-10-01 22:46:00,Buy Goods to 441098 - Kapa Oil Refineries,Completed,,3706.27,99350.58
+SK143QC9FHS,2026-10-02 05:35:00,Buy Goods to 771234 - Bidco Africa Distributors,Completed,,3248.48,96102.10
+SK1444RSN73,2026-10-02 07:39:00,Customer Payment to Till 789123 - Lucy Njeri 254715629481,Completed,750.13,,96852.23
+SK145X8U0PA,2026-10-02 10:10:00,Airtime Purchase for 254729112233,Completed,,500.00,96352.23
+SK146E8QVQX,2026-10-02 15:17:00,Customer Payment to Till 789123 - John Otieno 254731829405,Completed,3343.83,,99696.06
+SK147NF35Q3,2026-10-02 21:40:00,Customer Payment to Till 789123 - Agnes Wairimu 254718273645,Completed,2581.20,,102277.26
+SK148YUNT4K,2026-10-03 06:11:00,Customer Payment to Till 789123 - Peter Kamau 254722998877,Completed,1514.37,,103791.63
+SK149GK8U40,2026-10-03 09:21:00,Buy Goods to 441098 - Kapa Oil Refineries,Completed,,3158.57,100633.06
+SK150X22NN6,2026-10-03 12:07:00,Customer Payment to Till 789123 - Collins Barasa 254748291034,Completed,661.27,,101294.33
