@@ -83,12 +83,12 @@ def calculate_weekly_summary(
     else:
         resolved_end = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    if tx_datetimes:
+    if start_dt:
+        iso_year, iso_week, _ = start_dt.isocalendar()
+        week_label = f"{iso_year}-W{iso_week:02d}"
+    elif tx_datetimes:
         earliest_dt = min(tx_datetimes)
         iso_year, iso_week, _ = earliest_dt.isocalendar()
-        week_label = f"{iso_year}-W{iso_week:02d}"
-    elif start_dt:
-        iso_year, iso_week, _ = start_dt.isocalendar()
         week_label = f"{iso_year}-W{iso_week:02d}"
     else:
         week_label = "N/A"

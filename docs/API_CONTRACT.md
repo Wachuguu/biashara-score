@@ -9,6 +9,18 @@
 
 This document specifies the REST API contract between the Next.js 14 frontend and the Python backend for the Biashara Score MVP.
 
+### 1.0 Implementation Status
+| Component / Module | Status | Verification & Notes |
+| :--- | :--- | :--- |
+| **Pure Business Logic (`backend/src/core/`)** | **Working** | 100% pure Python (zero AWS/boto3 imports): CSV/SMS parser, rule categorizer, 4-pillar score engine, weekly summary, debt reconciliation, PDF generator. |
+| **Local REST API Server (`backend/local_server.py`)** | **Working** | FastAPI server running on `http://localhost:8000` with full CORS for `http://localhost:3000`. |
+| **AWS Lambda Handlers (`backend/src/handlers/`)** | **Working** | Handlers for API Gateway HTTP API v2 and EventBridge cron jobs. |
+| **Infrastructure as Code (`infra/template.yaml`)** | **Working** | Complete AWS SAM template for DynamoDB, S3, Cognito, HTTP API, Lambda. |
+| **Next.js 14 Frontend PWA (`frontend/`)** | **Not built yet** | Directory stubbed with `.gitkeep`; scheduled for frontend workstream. |
+| **Live Cloud AWS Deployment** | **Not built yet** | Shared AWS account deployment via `sam deploy` scheduled for Phase 5 staging. |
+| **Live Bedrock Haiku Fallback** | **Not built yet** (Mock working) | Operates in deterministic offline mock mode when `MOCK_AWS=true`. |
+| **Live Africa's Talking Telco Dispatch** | **Not built yet** (Mock working) | Operates with sanitized mock logger when `MOCK_AWS=true`. |
+
 ### 1.1 Authentication & Multi-Tenancy Rules
 Every protected endpoint enforces strict tenant isolation:
 
@@ -23,7 +35,7 @@ Every protected endpoint enforces strict tenant isolation:
   ```http
   X-Business-Id: biz_test_duka_01
   ```
-  If `X-Business-Id` is omitted when `MOCK_AWS=true`, the backend falls back to the default test business `biz_7a8b9c0d1e2f` (Mama Mary Provisions).
+  If `X-Business-Id` is omitted when `MOCK_AWS=true`, the backend falls back to the default test business `biz_7a8b9c0d1e2f` (Mama Mary Provisions). `X-Business-Id` is declared as an optional Header parameter on every route so it shows in Swagger UI (`/docs`).
 
 - **Public Endpoints (No Auth):**
   - `GET /health` requires no authorization header or tenant identifier.
@@ -250,7 +262,7 @@ All error responses (HTTP status codes `400`, `401`, `403`, `404`, `500`) must s
 
 #### 2.3.1 Get Weekly Summary & Historical Series
 - **Method & Path:** `GET /summary/weekly`
-- **Description:** Returns the primary dashboard financial pulse: current week's sales, expenses, estimated net profit, profit margin, active trading days, and trailing 4-week historical series.
+- **Description:** Returns the primary dashboard financial pulse: `current_week` represents the most recent single ISO week (Monday to Sunday, at most 7 active trading days) having transactions in the data, with its pulse message using that single week's figures. `history_series` returns the trailing `weeks` prior to `current_week`, ordered oldest to newest, with strictly zero overlap with `current_week`.
 - **Query Parameters:**
   - `weeks` (integer, optional, default: `4`, min: `1`, max: `12`)
 - **Response (`200 OK`):**
@@ -259,51 +271,51 @@ All error responses (HTTP status codes `400`, `401`, `403`, `404`, `500`) must s
     "business_id": "biz_7a8b9c0d1e2f",
     "currency": "KSh",
     "current_week": {
-      "week_label": "2026-W36",
-      "start_date": "2026-09-01",
-      "end_date": "2026-09-07",
-      "gross_sales": 38450.0,
-      "operating_expenses": 26800.0,
-      "estimated_profit": 11650.0,
-      "profit_margin_pct": 30.3,
-      "active_trading_days": 7,
-      "transaction_count": 42,
+      "week_label": "2026-W40",
+      "start_date": "2026-09-28",
+      "end_date": "2026-10-04",
+      "gross_sales": 42917.44,
+      "operating_expenses": 19995.0,
+      "estimated_profit": 22922.44,
+      "profit_margin_pct": 53.4,
+      "active_trading_days": 6,
+      "transaction_count": 30,
       "expense_breakdown": {
-        "INVENTORY": 11500.0,
-        "RENT": 15000.0,
-        "UTILITIES": 300.0,
-        "AIRTIME": 0.0
+        "INVENTORY": 19595.0,
+        "RENT": 0.0,
+        "UTILITIES": 0.0,
+        "AIRTIME": 400.0
       },
-      "pulse_message": "You made KSh 38,450 this week, estimated profit KSh 11,650."
+      "pulse_message": "You made KSh 42,917 this week, profit KSh 22,922."
     },
     "history_series": [
       {
-        "week_label": "2026-W33",
-        "gross_sales": 32100.0,
-        "operating_expenses": 23400.0,
-        "estimated_profit": 8700.0,
-        "profit_margin_pct": 27.1
-      },
-      {
-        "week_label": "2026-W34",
-        "gross_sales": 35400.0,
-        "operating_expenses": 24900.0,
-        "estimated_profit": 10500.0,
-        "profit_margin_pct": 29.7
-      },
-      {
-        "week_label": "2026-W35",
-        "gross_sales": 34100.0,
-        "operating_expenses": 25200.0,
-        "estimated_profit": 8900.0,
-        "profit_margin_pct": 26.1
-      },
-      {
         "week_label": "2026-W36",
         "gross_sales": 38450.0,
-        "operating_expenses": 26800.0,
-        "estimated_profit": 11650.0,
-        "profit_margin_pct": 30.3
+        "operating_expenses": 18379.42,
+        "estimated_profit": 20070.58,
+        "profit_margin_pct": 52.2
+      },
+      {
+        "week_label": "2026-W37",
+        "gross_sales": 32100.0,
+        "operating_expenses": 12400.0,
+        "estimated_profit": 19700.0,
+        "profit_margin_pct": 61.4
+      },
+      {
+        "week_label": "2026-W38",
+        "gross_sales": 35400.0,
+        "operating_expenses": 14900.0,
+        "estimated_profit": 20500.0,
+        "profit_margin_pct": 57.9
+      },
+      {
+        "week_label": "2026-W39",
+        "gross_sales": 34100.0,
+        "operating_expenses": 15200.0,
+        "estimated_profit": 18900.0,
+        "profit_margin_pct": 55.4
       }
     ]
   }
@@ -442,7 +454,7 @@ All error responses (HTTP status codes `400`, `401`, `403`, `404`, `500`) must s
 
 #### 2.5.1 Get Biashara Score
 - **Method & Path:** `GET /score`
-- **Description:** Returns the Biashara Credit Score (0–100), tier rating, pillar breakdown, and actionable improvement tips.
+- **Description:** Returns the Biashara Credit Score (0–100), tier rating (`Gold`, `Silver`, `Bronze`, `Needs Improvement`), pillar breakdown, and actionable improvement tips. If the store has recorded no customer debts in Kitabu ya Deni, `debt_recovery_rate` returns `null` and the Debt Recovery pillar evaluates to the neutral score of 15 / 20.
 - **Query Parameters:**
   - `recalculate` (boolean, optional, default: `false`)
 - **Response (`200 OK`):**

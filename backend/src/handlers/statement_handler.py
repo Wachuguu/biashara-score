@@ -1,17 +1,18 @@
 """
 Statement Handler: Safaricom CSV & SMS Ingestion, Transaction Listing
 Implements:
-- POST /statements/upload
-- POST /statements/sms
-- GET /transactions
+- POST /statements/upload (with 5MB file size limit and .csv type validation)
+- POST /statements/sms (with length and text format validation)
+- GET /transactions (with query param validation)
 """
 import re
 import base64
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 
 from .utils import (
-    parse_body
+    parse_body,
+    make_error_response
 )
 from ..wrappers.db_client import db_client
 from ..core.models import (
@@ -24,6 +25,10 @@ from ..core.models import (
 from ..core.parser import parse_csv_statement, parse_multiple_sms
 from ..core.categorizer import categorize_batch
 from ..core.debt_engine import match_repayment_to_debt, apply_debt_repayment
+
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 Megabytes limit per API Contract 2.2.1
+ALLOWED_EXTENSIONS = {".csv", ".txt"}
+ALLOWED_MIME_PREFIXES = {"text/csv", "application/vnd.ms-excel", "text/plain", "multipart/form-data"}
 
 
 def _process_and_store_transactions(
@@ -142,7 +147,23 @@ def _process_and_store_transactions(
 
 
 def execute_csv_upload(business_id: str, csv_content: str, filename: str = "statement.csv") -> Dict[str, Any]:
-    """Pure logic to parse and ingest CSV statement."""
+    """Pure logic to parse and ingest CSV statement with size and format limits."""
+    # 1. Type validation: check file extension
+    lower_fn = (filename or "").lower()
+    if lower_fn and not any(lower_fn.endswith(ext) for ext in ALLOWED_EXTENSIONS):
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "INVALID_STATEMENT_FORMAT",
+                    "message": f"Unsupported file type. Statement must have a .csv extension (received '{filename}').",
+                    "details": [{"field": "file", "issue": "Must be a .csv file"}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    # 2. Content presence check
     if not csv_content or not csv_content.strip():
         return {
             "statusCode": 400,
@@ -151,6 +172,55 @@ def execute_csv_upload(business_id: str, csv_content: str, filename: str = "stat
                     "code": "INVALID_STATEMENT_FORMAT",
                     "message": "CSV statement content is empty.",
                     "details": [],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    # 3. Binary detection check
+    if "\x00" in csv_content[:1024]:
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "INVALID_STATEMENT_FORMAT",
+                    "message": "Uploaded file contains binary data, not valid CSV text.",
+                    "details": [{"field": "file", "issue": "Binary content detected"}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    # 4. Required M-Pesa CSV headers check
+    content_lower = csv_content.lower()
+    if "receipt" not in content_lower:
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "INVALID_STATEMENT_FORMAT",
+                    "message": "The uploaded CSV file is missing required M-Pesa header columns.",
+                    "details": [
+                        {
+                            "field": "headers",
+                            "issue": "Missing 'Receipt No.' column"
+                        }
+                    ],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    # 5. Payload size check
+    content_byte_len = len(csv_content.encode("utf-8"))
+    if content_byte_len > MAX_UPLOAD_BYTES:
+        return {
+            "statusCode": 413,
+            "body": {
+                "error": {
+                    "code": "PAYLOAD_TOO_LARGE",
+                    "message": f"Statement file exceeds 5MB size limit (received {content_byte_len / (1024*1024):.2f}MB).",
+                    "details": [{"field": "file", "limit": "5MB"}],
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
             }
@@ -166,6 +236,19 @@ def execute_csv_upload(business_id: str, csv_content: str, filename: str = "stat
                     "code": "INVALID_STATEMENT_FORMAT",
                     "message": f"Failed to parse CSV statement: {str(e)}",
                     "details": [],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    if not parsed_txs:
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "INVALID_STATEMENT_FORMAT",
+                    "message": "No valid M-Pesa transactions found in CSV.",
+                    "details": [{"field": "rows", "issue": "No parseable transaction rows"}],
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
             }
@@ -189,31 +272,96 @@ def execute_csv_upload(business_id: str, csv_content: str, filename: str = "stat
 
 
 def upload_statement(event: Dict[str, Any], business_id: str) -> Dict[str, Any]:
-    """Lambda adapter for POST /statements/upload."""
-    body = event.get("body", "")
-    if event.get("isBase64Encoded"):
-        body = base64.b64decode(body).decode("utf-8", errors="replace")
+    """Lambda adapter for POST /statements/upload with size and content-type enforcement."""
+    raw_headers = {str(k).lower(): str(v) for k, v in (event.get("headers") or {}).items()}
+    content_type = raw_headers.get("content-type", "")
 
-    # If multipart, extract file content between boundaries
-    if "boundary=" in (event.get("headers") or {}).get("content-type", "").lower() or "--" in body[:100]:
+    raw_body = event.get("body", "")
+    if event.get("isBase64Encoded"):
+        try:
+            decoded_bytes = base64.b64decode(raw_body)
+        except Exception:
+            return {
+                "statusCode": 400,
+                "body": {
+                    "error": {
+                        "code": "INVALID_STATEMENT_FORMAT",
+                        "message": "Invalid base64 payload.",
+                        "details": [],
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+
+        # Size check on binary before string decode
+        if len(decoded_bytes) > MAX_UPLOAD_BYTES:
+            return {
+                "statusCode": 413,
+                "body": {
+                    "error": {
+                        "code": "PAYLOAD_TOO_LARGE",
+                        "message": f"Uploaded file exceeds 5MB size limit ({len(decoded_bytes) / (1024*1024):.2f}MB).",
+                        "details": [],
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+        body = decoded_bytes.decode("utf-8", errors="replace")
+    else:
+        if len(raw_body.encode("utf-8")) > MAX_UPLOAD_BYTES:
+            return {
+                "statusCode": 413,
+                "body": {
+                    "error": {
+                        "code": "PAYLOAD_TOO_LARGE",
+                        "message": "Uploaded file exceeds 5MB size limit.",
+                        "details": [],
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+        body = raw_body
+
+    # Extract filename from Content-Disposition if multipart
+    filename = "statement.csv"
+    fn_match = re.search(r'filename="([^"]+)"', body[:500])
+    if fn_match:
+        filename = fn_match.group(1)
+
+    # Extract CSV content between multipart boundaries
+    if "boundary=" in content_type.lower() or "--" in body[:100]:
         match = re.search(r"\r\n\r\n(.*?)(?:\r\n--|\Z)", body, re.DOTALL)
         csv_content = match.group(1) if match else body
     else:
         csv_content = body
 
-    return execute_csv_upload(business_id, csv_content)
+    return execute_csv_upload(business_id, csv_content, filename=filename)
 
 
 def execute_sms_ingestion(business_id: str, sms_text: str) -> Dict[str, Any]:
-    """Pure logic to parse and ingest SMS string."""
-    if not sms_text or not sms_text.strip():
+    """Pure logic to parse and ingest SMS string with input validation."""
+    if not isinstance(sms_text, str) or not sms_text.strip():
         return {
             "statusCode": 400,
             "body": {
                 "error": {
                     "code": "VALIDATION_ERROR",
-                    "message": "Field 'sms_text' cannot be empty.",
-                    "details": [],
+                    "message": "Field 'sms_text' must be a non-empty string.",
+                    "details": [{"field": "sms_text", "issue": "Missing or empty"}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    # Length guard
+    if len(sms_text) > 10000:
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Field 'sms_text' exceeds maximum length of 10,000 characters.",
+                    "details": [{"field": "sms_text", "limit": "10000 characters"}],
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
             }
@@ -257,12 +405,56 @@ def ingest_sms(event: Dict[str, Any], business_id: str) -> Dict[str, Any]:
 
 
 def execute_list_transactions(business_id: str, query_params: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure logic to list and filter transactions."""
-    limit = int(query_params.get("limit", 50))
-    limit = min(max(1, limit), 200)
+    """Pure logic to list and filter transactions with robust input validation."""
+    raw_limit = query_params.get("limit", 50)
+    try:
+        limit = int(raw_limit)
+        if limit < 1 or limit > 200:
+            limit = min(max(1, limit), 200)
+    except (TypeError, ValueError):
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Query parameter 'limit' must be an integer between 1 and 200.",
+                    "details": [{"param": "limit", "value": str(raw_limit)}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
 
     category_filter = query_params.get("category")
+    if category_filter:
+        valid_cats = {c.value for c in TransactionCategory}
+        if str(category_filter).upper() not in valid_cats:
+            return {
+                "statusCode": 400,
+                "body": {
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": f"Invalid category '{category_filter}'. Allowed: {sorted(list(valid_cats))}",
+                        "details": [{"param": "category", "allowed": sorted(list(valid_cats))}],
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+
     direction_filter = query_params.get("direction")
+    if direction_filter:
+        if str(direction_filter).upper() not in ["IN", "OUT"]:
+            return {
+                "statusCode": 400,
+                "body": {
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": "Query parameter 'direction' must be 'IN' or 'OUT'.",
+                        "details": [{"param": "direction", "allowed": ["IN", "OUT"]}],
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+
     start_date = query_params.get("start_date")
     end_date = query_params.get("end_date")
 
@@ -270,9 +462,9 @@ def execute_list_transactions(business_id: str, query_params: Dict[str, Any]) ->
 
     filtered = []
     for item in raw_items:
-        if category_filter and item.get("category") != category_filter.upper():
+        if category_filter and item.get("category") != str(category_filter).upper():
             continue
-        if direction_filter and item.get("direction") != direction_filter.upper():
+        if direction_filter and item.get("direction") != str(direction_filter).upper():
             continue
         comp_time = item.get("completion_time", "")
         if start_date and comp_time < start_date:
@@ -315,4 +507,3 @@ handle_list_transactions = execute_list_transactions
 def handle_weekly_summary(business_id: str, query_params: Dict[str, Any]) -> Dict[str, Any]:
     from .score_handler import execute_weekly_summary
     return execute_weekly_summary(business_id, query_params)
-

@@ -23,6 +23,7 @@ import os
 import sys
 import json
 import base64
+import re
 import unittest
 from datetime import datetime, timezone
 
@@ -39,7 +40,7 @@ os.environ["ENVIRONMENT"] = "dev"
 from fastapi.testclient import TestClient
 from local_server import app
 from src.handlers.api_handler import lambda_handler
-from src.wrappers.db_client import db_client, DEFAULT_TEST_BUSINESS
+from src.wrappers.db_client import db_client, DEFAULT_TEST_BUSINESS, DEFAULT_TEST_BUSINESS_ID
 
 
 class TestApiEndpoints(unittest.TestCase):
@@ -295,8 +296,27 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(data["currency"], "KSh")
         self.assertIn("current_week", data)
         self.assertIn("history_series", data)
-        self.assertGreater(data["current_week"]["gross_sales"], 0)
-        self.assertGreater(len(data["history_series"]), 0)
+
+        cw = data["current_week"]
+        # Bug 1 verification: A week must never have more than 7 active trading days
+        self.assertLessEqual(cw["active_trading_days"], 7, "A single ISO week must not have > 7 active trading days")
+        self.assertEqual(cw["active_trading_days"], 6)
+        self.assertEqual(cw["week_label"], "2026-W40")
+        self.assertEqual(cw["start_date"], "2026-09-28")
+        self.assertEqual(cw["end_date"], "2026-10-04")
+        self.assertEqual(cw["transaction_count"], 30)
+        self.assertEqual(cw["gross_sales"], 42917.44)
+        self.assertIn("You made KSh 42,917 this week, profit KSh 22,922.", cw["pulse_message"])
+
+        # History series must be trailing 4 weeks before current_week with NO overlap
+        history = data["history_series"]
+        self.assertEqual(len(history), 4)
+        hist_labels = [h["week_label"] for h in history]
+        self.assertEqual(hist_labels, ["2026-W36", "2026-W37", "2026-W38", "2026-W39"])
+        self.assertNotIn(cw["week_label"], hist_labels)
+
+        for h in history:
+            self.assertLessEqual(h.get("active_trading_days", 0), 7)
 
     # ========================================================================
     # 9. Biashara Credit Scoring (GET & POST)
@@ -312,6 +332,10 @@ class TestApiEndpoints(unittest.TestCase):
         score_data = res.json()
         self.assertIn("total_score", score_data)
         self.assertIn("tier", score_data)
+        self.assertIn(score_data["tier"], ["Gold", "Silver", "Bronze", "Needs Improvement"])
+        # Requirement 4: debt_recovery_rate is null and debt_recovery_score is neutral (15) when there are no debts
+        self.assertIsNone(score_data["debt_recovery_rate"])
+        self.assertEqual(score_data["debt_recovery_score"], 15)
         self.assertTrue(0 <= score_data["total_score"] <= 100)
         self.assertEqual(
             score_data["total_score"],
@@ -340,6 +364,17 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertTrue(res.content.startswith(b"%PDF-"))
         self.assertGreater(len(res.content), 2000)
 
+        # Single page check
+        self.assertEqual(len(re.findall(rb"/Type\s*/Page[^s]", res.content)), 1)
+        pdf_text = res.content.decode("latin1", errors="ignore")
+        self.assertIn("No customer credit recorded", pdf_text)
+        self.assertIn("Prepared by Biashara Score from an uploaded M-Pesa statement. Figures are not verified by Safaricom or any financial institution.", pdf_text)
+        clean_pdf_text = re.sub(r"(?i)\bnot verified\b", "", pdf_text)
+        self.assertNotIn("verified", clean_pdf_text.lower())
+        self.assertNotIn("certified", pdf_text.lower())
+        self.assertIn("Last 4 weeks", pdf_text)
+        self.assertIn("Gold 80+, Silver 65-79, Bronze 50-64, Needs Improvement below 50", pdf_text)
+
         # Lambda handler PDF event with base64 decoding check
         lambda_event = {
             "rawPath": "/reports/lender-pdf",
@@ -351,6 +386,7 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertTrue(lambda_res.get("isBase64Encoded"))
         pdf_decoded = base64.b64decode(lambda_res["body"])
         self.assertTrue(pdf_decoded.startswith(b"%PDF-"))
+        self.assertEqual(len(re.findall(rb"/Type\s*/Page[^s]", pdf_decoded)), 1)
 
     # ========================================================================
     # 11. SMS Notification Dispatch
@@ -371,6 +407,96 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(data["recipient_phone"], "+254712345678")
         self.assertIn("Habari", data["sms_text"])
         self.assertEqual(data["provider_response"]["mode"], "mock")
+
+    # ========================================================================
+    # 12. Tenant ID Resolution & Mode Enforcement (Mock vs Production)
+    # ========================================================================
+    def test_mock_mode_missing_x_business_id_fallback(self):
+        """When MOCK_AWS=true, missing X-Business-Id falls back to DEFAULT_TEST_BUSINESS_ID (biz_7a8b9c0d1e2f)."""
+        os.environ["MOCK_AWS"] = "true"
+
+        # FastAPI endpoint GET /business without X-Business-Id
+        res = self.client.get("/business")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["business_id"], DEFAULT_TEST_BUSINESS_ID)
+        self.assertEqual(data["business_id"], "biz_7a8b9c0d1e2f")
+
+        # Protected endpoints succeed without X-Business-Id
+        self.assertEqual(self.client.get("/score").status_code, 200)
+        self.assertEqual(self.client.get("/summary/weekly").status_code, 200)
+        self.assertEqual(self.client.get("/debts").status_code, 200)
+        self.assertEqual(self.client.get("/transactions").status_code, 200)
+        self.assertEqual(self.client.get("/reports/lender-pdf").status_code, 200)
+
+        # Lambda handler fallback
+        lambda_event = {"rawPath": "/business", "httpMethod": "GET", "headers": {}}
+        lambda_res = lambda_handler(lambda_event, None)
+        self.assertEqual(lambda_res["statusCode"], 200)
+        lambda_body = json.loads(lambda_res["body"])
+        self.assertEqual(lambda_body["business_id"], DEFAULT_TEST_BUSINESS_ID)
+
+    def test_production_mode_auth_and_header_rejection(self):
+        """
+        When MOCK_AWS=false:
+        - X-Business-Id header is rejected with 403 Forbidden.
+        - Bearer auth / verified claims are required (missing returns 401 Unauthorized).
+        """
+        os.environ["MOCK_AWS"] = "false"
+        try:
+            # 1. FastAPI local_server: X-Business-Id must return 403
+            res_forbidden = self.client.get("/business", headers={"X-Business-Id": "biz_attacker"})
+            self.assertEqual(res_forbidden.status_code, 403)
+            self.assertEqual(res_forbidden.json()["error"]["code"], "FORBIDDEN")
+
+            # 2. FastAPI local_server: Missing claims / Bearer token must return 401
+            res_unauth = self.client.get("/business")
+            self.assertEqual(res_unauth.status_code, 401)
+            self.assertEqual(res_unauth.json()["error"]["code"], "UNAUTHORIZED")
+
+            # 3. Lambda handler: X-Business-Id rejected with 403
+            event_with_header = {
+                "rawPath": "/business",
+                "httpMethod": "GET",
+                "headers": {"x-business-id": "biz_attacker"}
+            }
+            res_lambda_403 = lambda_handler(event_with_header, None)
+            self.assertEqual(res_lambda_403["statusCode"], 403)
+
+            # 4. Lambda handler: Missing authorizer claims returns 401
+            event_no_auth = {
+                "rawPath": "/business",
+                "httpMethod": "GET",
+                "headers": {}
+            }
+            res_lambda_401 = lambda_handler(event_no_auth, None)
+            self.assertEqual(res_lambda_401["statusCode"], 401)
+        finally:
+            os.environ["MOCK_AWS"] = "true"
+
+    def test_x_business_id_optional_header_declared_on_every_route(self):
+        """Verifies X-Business-Id is declared as an optional header parameter on every route in OpenAPI docs."""
+        openapi_schema = app.openapi()
+        paths = openapi_schema.get("paths", {})
+        self.assertGreater(len(paths), 0)
+
+        for path, path_item in paths.items():
+            for method, operation in path_item.items():
+                if method in ["get", "post", "put", "patch", "delete"]:
+                    params = operation.get("parameters", [])
+                    header_params = [
+                        p for p in params
+                        if p.get("in") == "header" and p.get("name", "").lower() == "x-business-id"
+                    ]
+                    self.assertEqual(
+                        len(header_params), 1,
+                        f"Route {method.upper()} {path} must declare X-Business-Id header parameter."
+                    )
+                    self.assertEqual(header_params[0]["name"], "X-Business-Id")
+                    self.assertFalse(
+                        header_params[0].get("required", False),
+                        f"Route {method.upper()} {path} X-Business-Id header must be optional (required=False)."
+                    )
 
 
 if __name__ == "__main__":

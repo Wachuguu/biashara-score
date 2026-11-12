@@ -1,14 +1,15 @@
 """
-Score Handler: Biashara Credit Scoring, Financial Summary & Lender PDF Verification Report
+Score Handler: Biashara Credit Scoring, Financial Summary & Lender PDF Business Cashflow Summary
 Implements:
-- GET /summary/weekly
+- GET /summary/weekly (with weeks param validation)
 - GET /score
 - POST /score/calculate
-- GET /reports/lender-pdf
+- GET /reports/lender-pdf (with format validation)
 """
 import base64
 from typing import Dict, Any, List
 from dataclasses import asdict
+from datetime import datetime, timedelta, timezone
 
 from .utils import (
     parse_body
@@ -22,7 +23,7 @@ from ..core.models import (
     DebtStatus
 )
 from ..core.score_engine import calculate_biashara_score
-from ..core.summary import calculate_weekly_summary, calculate_multi_week_series
+from ..core.summary import calculate_weekly_summary, calculate_multi_week_series, _parse_completion_time
 from ..core.debt_engine import calculate_debt_metrics
 from ..core.report_generator import generate_lender_pdf
 
@@ -72,13 +73,65 @@ def _load_transactions_and_debts(business_id: str):
 
 
 def execute_weekly_summary(business_id: str, query_params: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure logic to calculate weekly financial summary and historical series."""
-    weeks = int(query_params.get("weeks", 4))
-    weeks = min(max(1, weeks), 12)
+    """Pure logic to calculate weekly financial summary and historical series with query validation."""
+    raw_weeks = query_params.get("weeks", 4)
+    try:
+        weeks = int(raw_weeks)
+        if weeks < 1 or weeks > 12:
+            weeks = min(max(1, weeks), 12)
+    except (TypeError, ValueError):
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Query parameter 'weeks' must be an integer between 1 and 12.",
+                    "details": [{"param": "weeks", "value": str(raw_weeks)}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
 
     txs, _ = _load_transactions_and_debts(business_id)
-    curr_sum = calculate_weekly_summary(txs, business_id=business_id)
-    history_models = calculate_multi_week_series(txs, num_weeks=weeks, business_id=business_id)
+
+    # 1. Determine most recent ISO week that has transactions in the data
+    valid_times = []
+    for t in txs:
+        dt = _parse_completion_time(t.completion_time)
+        if dt:
+            valid_times.append(dt)
+
+    if valid_times:
+        latest_dt = max(valid_times)
+        iso_year, iso_week, _ = latest_dt.isocalendar()
+        current_monday = datetime.fromisocalendar(iso_year, iso_week, 1)
+    else:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        iso_year, iso_week, _ = now.isocalendar()
+        current_monday = datetime.fromisocalendar(iso_year, iso_week, 1)
+
+    current_sunday = current_monday + timedelta(days=6)
+    current_start_str = current_monday.strftime("%Y-%m-%d")
+    current_end_str = current_sunday.strftime("%Y-%m-%d")
+
+    curr_sum = calculate_weekly_summary(
+        txs,
+        start_date=current_start_str,
+        end_date=current_end_str,
+        business_id=business_id
+    )
+    curr_sum.week_label = f"{iso_year}-W{iso_week:02d}"
+    curr_sum.start_date = current_start_str
+    curr_sum.end_date = current_end_str
+
+    # 2. history_series is the trailing weeks before current_week (no overlap)
+    ref_sunday = current_monday - timedelta(days=1)
+    history_models = calculate_multi_week_series(
+        txs,
+        num_weeks=weeks,
+        reference_date=ref_sunday.strftime("%Y-%m-%d"),
+        business_id=business_id
+    )
 
     current_week_dict = asdict(curr_sum)
     current_week_dict.pop("business_id", None)
@@ -132,7 +185,21 @@ def calculate_score(event: Dict[str, Any], business_id: str) -> Dict[str, Any]:
 
 
 def execute_lender_pdf(business_id: str, query_params: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure logic to generate downloadable single-page A4 lender verification PDF."""
+    """Pure logic to generate downloadable single-page A4 lender business cashflow summary PDF with format validation."""
+    fmt = str(query_params.get("format", "binary")).lower()
+    if fmt not in ["binary", "base64"]:
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Query parameter 'format' must be 'binary' or 'base64'.",
+                    "details": [{"param": "format", "value": fmt}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
     business_profile = db_client.get_business(business_id) or {
         "business_id": business_id,
         "shop_name": "Mama Mary Wholesale & Retail",
@@ -151,7 +218,8 @@ def execute_lender_pdf(business_id: str, query_params: Dict[str, Any]) -> Dict[s
         business_profile=business_profile,
         score_result=score_res,
         weekly_summaries=weekly_summaries,
-        debt_summary=debt_summary
+        debt_summary=debt_summary,
+        transactions=txs
     )
 
     filename = f"Biashara_Score_Report_{business_profile.get('shop_name', 'Duka').replace(' ', '_')}.pdf"
@@ -178,4 +246,3 @@ def download_lender_pdf(event: Dict[str, Any], business_id: str) -> Dict[str, An
 handle_score = execute_score
 handle_lender_pdf = execute_lender_pdf
 handle_weekly_summary = execute_weekly_summary
-

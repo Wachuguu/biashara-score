@@ -4,6 +4,7 @@ Pure Python, 100% offline with zero AWS credentials.
 """
 import unittest
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from backend.src.core.models import (
     DebtRecord,
@@ -19,7 +20,13 @@ from backend.src.core.debt_engine import (
     apply_debt_repayment,
     calculate_debt_metrics
 )
-from backend.src.core.report_generator import generate_lender_pdf
+from backend.src.core.report_generator import (
+    generate_lender_pdf,
+    DISCLAIMER_FOOTER,
+    TIER_THRESHOLDS_LINE,
+    _generate_pure_pdf,
+    extract_report_facts
+)
 from backend.src.wrappers.sms_client import (
     build_weekly_sms_message,
     AfricaTalkingSMSClient,
@@ -269,8 +276,8 @@ class TestDebtReportSMS(unittest.TestCase):
 
     def test_generate_lender_pdf(self):
         """
-        Tests generation of the lender verification PDF report.
-        Must return bytes starting with b"%PDF-" and size > 3000 bytes.
+        Tests generation of the lender business cashflow summary PDF report with debts.
+        Must return valid PDF bytes, single page, disclaimer present, and wording checks.
         """
         debt_summary = {
             "total_outstanding_amount": 3200.0,
@@ -290,6 +297,149 @@ class TestDebtReportSMS(unittest.TestCase):
         self.assertIsInstance(pdf_bytes, bytes)
         self.assertTrue(pdf_bytes.startswith(b"%PDF-"), "PDF must start with %PDF- magic bytes")
         self.assertGreater(len(pdf_bytes), 3000, f"PDF byte size should be > 3000 bytes (got {len(pdf_bytes)})")
+
+        # 1. Exactly one page
+        page_count = len(re.findall(rb"/Type\s*/Page[^s]", pdf_bytes))
+        self.assertEqual(page_count, 1, f"PDF must be strictly ONE page (got {page_count})")
+
+        text = pdf_bytes.decode("latin1", errors="ignore")
+
+        # 2. Real recovery rate displayed when debts exist
+        self.assertIn("Recovery Rate: 58.4%", text)
+        self.assertNotIn("No customer credit recorded", text)
+
+        # 3. Disclaimer present
+        self.assertIn(DISCLAIMER_FOOTER, text)
+
+        # 4. 'verified' absent apart from 'not verified'
+        clean_text = re.sub(r"(?i)\bnot verified\b", "", text)
+        self.assertNotIn("verified", clean_text.lower(), "'verified' must be absent apart from 'not verified'")
+        self.assertNotIn("certified", text.lower(), "'certified' must not appear anywhere")
+        self.assertNotIn("Credit Verification Report", text)
+        self.assertNotIn("Confidential Verification Document", text)
+
+        # 5. Table heading and tier thresholds line
+        self.assertIn("Last 4 weeks", text)
+        self.assertIn(TIER_THRESHOLDS_LINE, text)
+
+        # 6. Facts block fields present
+        self.assertIn("Report Date:", text)
+        self.assertIn("Data Period Covered:", text)
+        self.assertIn("Transactions Analysed:", text)
+        self.assertIn("Active Trading Days:", text)
+        self.assertIn("Avg Sales Transaction:", text)
+
+        # 7. Chart labelled in KSh
+        self.assertIn("Weekly Gross Sales Trend", text)
+        self.assertIn("KSh", text)
+
+    def test_generate_lender_pdf_no_debts(self):
+        """
+        Tests generation when the shop has no debts (debt_recovery_rate is None or total owed is 0).
+        Must print 'No customer credit recorded' instead of 'Recovery Rate: 0.0%'.
+        """
+        score_no_debts = BiasharaScoreResult(
+            business_id="biz_7a8b9c0d1e2f",
+            total_score=75,
+            tier="Silver",
+            consistency_score=26,
+            growth_score=19,
+            expense_ratio_score=20,
+            debt_recovery_score=15,
+            weekly_turnover_avg=35087.5,
+            weekly_profit_avg=9937.5,
+            debt_recovery_rate=None,  # Null / None
+            computed_at="2026-11-12T15:45:00Z",
+            actionable_tips=["Maintain steady customer transactions."]
+        )
+
+        empty_debt_summary = {
+            "total_outstanding_amount": 0.0,
+            "total_cleared_amount": 0.0,
+            "recovery_rate_pct": 0.0,
+            "delinquent_count": 0,
+            "unpaid_count": 0,
+            "total_debts_count": 0
+        }
+
+        pdf_bytes = generate_lender_pdf(
+            business_profile=self.business_profile,
+            score_result=score_no_debts,
+            weekly_summaries=self.weekly_summaries,
+            debt_summary=empty_debt_summary
+        )
+
+        self.assertIsInstance(pdf_bytes, bytes)
+        self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
+        page_count = len(re.findall(rb"/Type\s*/Page[^s]", pdf_bytes))
+        self.assertEqual(page_count, 1, f"PDF must be strictly ONE page (got {page_count})")
+
+        text = pdf_bytes.decode("latin1", errors="ignore")
+
+        # 'No customer credit recorded' must be present
+        self.assertIn("No customer credit recorded", text)
+        # 'Recovery Rate: 0.0%' must NOT be present
+        self.assertNotIn("Recovery Rate: 0.0%", text)
+
+        # Disclaimer present
+        self.assertIn(DISCLAIMER_FOOTER, text)
+
+        # 'verified' absent apart from 'not verified'
+        clean_text = re.sub(r"(?i)\bnot verified\b", "", text)
+        self.assertNotIn("verified", clean_text.lower())
+        self.assertNotIn("certified", text.lower())
+
+    def test_generate_pure_pdf_builder_fallback(self):
+        """
+        Tests the pure Python vector generator fallback directly.
+        Ensures valid PDF bytes, single page, disclaimer, no debts wording, and no disallowed words.
+        """
+        score_no_debts = BiasharaScoreResult(
+            business_id="biz_pure_01",
+            total_score=72,
+            tier="Silver",
+            consistency_score=24,
+            growth_score=18,
+            expense_ratio_score=18,
+            debt_recovery_score=12,
+            weekly_turnover_avg=30000.0,
+            weekly_profit_avg=8000.0,
+            debt_recovery_rate=None,
+            computed_at="2026-11-12T12:00:00Z",
+            actionable_tips=["Keep growing cash sales."]
+        )
+        empty_debt_summary = {
+            "total_outstanding_amount": 0.0,
+            "total_cleared_amount": 0.0,
+            "recovery_rate_pct": 0.0,
+            "delinquent_count": 0,
+            "unpaid_count": 0
+        }
+        facts = extract_report_facts(score_no_debts, self.weekly_summaries)
+
+        pdf_bytes = _generate_pure_pdf(
+            business_profile=self.business_profile,
+            score_result=score_no_debts,
+            weekly_summaries=self.weekly_summaries,
+            debt_summary=empty_debt_summary,
+            facts=facts
+        )
+
+        self.assertIsInstance(pdf_bytes, bytes)
+        self.assertTrue(pdf_bytes.startswith(b"%PDF-"))
+        page_count = len(re.findall(rb"/Type\s*/Page[^s]", pdf_bytes))
+        self.assertEqual(page_count, 1)
+
+        text = pdf_bytes.decode("latin1", errors="ignore")
+        self.assertIn("No customer credit recorded", text)
+        self.assertNotIn("Recovery Rate: 0.0%", text)
+        self.assertIn(DISCLAIMER_FOOTER, text)
+        self.assertIn("Last 4 weeks", text)
+        self.assertIn(TIER_THRESHOLDS_LINE, text)
+
+        clean_text = re.sub(r"(?i)\bnot verified\b", "", text)
+        self.assertNotIn("verified", clean_text.lower())
+        self.assertNotIn("certified", text.lower())
 
     def test_build_weekly_sms_message(self):
         """

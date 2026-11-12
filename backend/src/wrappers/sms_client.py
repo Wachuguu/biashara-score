@@ -1,12 +1,21 @@
 """
 Africa's Talking SMS Client Wrapper & Message Builder
-Dispatches weekly summary SMS messages in Kenya, or prints to stdout when MOCK_AWS=true.
+Dispatches weekly summary SMS messages in Kenya, or prints sanitized logs when MOCK_AWS=true.
+Ensures PII (phone numbers, names) is never logged in plaintext.
 """
 import os
 import re
 from typing import Dict, Any
 
 MOCK_MODE = os.getenv("MOCK_AWS", "true").lower() == "true"
+
+
+def mask_phone_number(phone: str) -> str:
+    """Masks personal phone number (e.g. +254***78) for safe logging."""
+    if not phone or len(phone) < 6:
+        return "[REDACTED]"
+    cleaned = phone.strip()
+    return cleaned[:4] + "***" + cleaned[-2:]
 
 
 def build_weekly_sms_message(
@@ -55,10 +64,13 @@ class AfricaTalkingSMSClient:
     def send_sms(self, phone_number: str, message: str) -> Dict[str, Any]:
         """
         Sends an SMS to a Kenyan phone number (+254...).
+        Logs only sanitized/masked metadata without leaking personal phone numbers or customer names.
         Returns a response dict with status, recipient, mode, and cost.
         """
+        masked = mask_phone_number(phone_number)
         if self.mock or not self.api_key:
-            print(f"[LOCAL SMS MOCK to {phone_number}]: {message}")
+            # Safe sanitized log: no personal names or full phone numbers
+            print(f"[LOCAL SMS MOCK to {masked}]: Dispatched financial digest notification (chars: {len(message)})")
             return {
                 "status": "success",
                 "recipient": phone_number,

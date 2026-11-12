@@ -108,6 +108,6 @@ class BiasharaScoreResult:
     debt_recovery_score: int  # max 20
     weekly_turnover_avg: float
     weekly_profit_avg: float
-    debt_recovery_rate: float
-    computed_at: str
+    debt_recovery_rate: Optional[float] = None
+    computed_at: str = ""
     actionable_tips: List[str] = field(default_factory=list)

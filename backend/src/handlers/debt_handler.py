@@ -1,10 +1,11 @@
 """
 Debt Handler: Digital Kitabu ya Deni (Customer Debt Tracking)
 Implements:
-- POST /debts
-- GET /debts
-- PATCH /debts/{debt_id}
+- POST /debts (with input validation for name, phone, amount)
+- GET /debts (with status and search query validation)
+- PATCH /debts/{debt_id} (with negative amount rejection)
 """
+import re
 import uuid
 from typing import Dict, Any, List
 from datetime import datetime, timezone
@@ -21,28 +22,55 @@ from ..core.debt_engine import (
     calculate_debt_metrics
 )
 
+PHONE_PATTERN = re.compile(r"^(\+?254|0)?[17]\d{8}$")
+VALID_STATUSES = {s.value for s in DebtStatus}
+
+
+def is_valid_phone(phone: str) -> bool:
+    """Validates Kenyan phone number format."""
+    if not phone or not isinstance(phone, str):
+        return False
+    clean_phone = phone.replace(" ", "").replace("-", "")
+    return bool(PHONE_PATTERN.match(clean_phone))
+
 
 def execute_create_debt(business_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure logic to create customer debt record in Kitabu ya Deni."""
-    debtor_name = body.get("debtor_name", "").strip()
-    debtor_phone = body.get("debtor_phone", "").strip()
-
-    if not debtor_name:
+    """Pure logic to create customer debt record in Kitabu ya Deni with strict validation."""
+    if not isinstance(body, dict):
         return {
             "statusCode": 400,
             "body": {
                 "error": {
                     "code": "VALIDATION_ERROR",
-                    "message": "Field 'debtor_name' is required.",
-                    "details": [{"field": "debtor_name", "issue": "Missing debtor name"}],
+                    "message": "Request body must be a JSON object.",
+                    "details": [],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    debtor_name = str(body.get("debtor_name", "")).strip()
+    debtor_phone = str(body.get("debtor_phone", "")).strip()
+
+    if not debtor_name or len(debtor_name) > 100:
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Field 'debtor_name' is required and must be between 1 and 100 characters.",
+                    "details": [{"field": "debtor_name", "issue": "Missing or too long"}],
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
             }
         }
 
     try:
-        amount_owed = float(body.get("amount_owed", 0.0))
-        if amount_owed <= 0:
+        raw_amt = body.get("amount_owed")
+        if raw_amt is None:
+            raise ValueError
+        amount_owed = float(raw_amt)
+        if amount_owed <= 0 or amount_owed > 10000000:
             raise ValueError
     except (TypeError, ValueError):
         return {
@@ -50,17 +78,35 @@ def execute_create_debt(business_id: str, body: Dict[str, Any]) -> Dict[str, Any
             "body": {
                 "error": {
                     "code": "VALIDATION_ERROR",
-                    "message": "Field 'amount_owed' must be a positive number.",
-                    "details": [{"field": "amount_owed", "issue": "Must be > 0"}],
+                    "message": "Field 'amount_owed' must be a positive number up to 10,000,000.",
+                    "details": [{"field": "amount_owed", "issue": "Must be > 0 and <= 10,000,000"}],
                     "timestamp": datetime.now(timezone.utc).isoformat()
                 }
             }
         }
 
-    normalized_phone = normalize_phone_number(debtor_phone) if debtor_phone else ""
+    if debtor_phone:
+        clean_phone = debtor_phone.replace(" ", "").replace("-", "")
+        if not PHONE_PATTERN.match(clean_phone):
+            return {
+                "statusCode": 400,
+                "body": {
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": "Field 'debtor_phone' must be a valid Kenyan phone number (e.g. +254712345678 or 0712345678).",
+                        "details": [{"field": "debtor_phone", "issue": "Invalid format"}],
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+        normalized_phone = normalize_phone_number(clean_phone)
+    else:
+        normalized_phone = ""
+
+    items_summary = str(body.get("items_summary", ""))[:500]
+    due_date = str(body.get("due_date", ""))[:50]
     debt_id = f"debt_{uuid.uuid4().hex[:12]}"
     now_iso = datetime.now(timezone.utc).isoformat()
-    due_date = body.get("due_date", "")
 
     debt_dict = {
         "debt_id": debt_id,
@@ -71,7 +117,7 @@ def execute_create_debt(business_id: str, body: Dict[str, Any]) -> Dict[str, Any
         "amount_cleared": 0.0,
         "balance_remaining": amount_owed,
         "status": DebtStatus.UNPAID.value,
-        "items_summary": body.get("items_summary", ""),
+        "items_summary": items_summary,
         "created_at": now_iso,
         "due_date": due_date,
         "repayment_history": []
@@ -91,10 +137,25 @@ def create_debt(event: Dict[str, Any], business_id: str) -> Dict[str, Any]:
 
 
 def execute_list_debts(business_id: str, query_params: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure logic to list customer debts and aggregate recovery metrics."""
+    """Pure logic to list customer debts and aggregate recovery metrics with query validation."""
     status_filter = query_params.get("status")
+    if status_filter:
+        st_upper = str(status_filter).upper()
+        if st_upper not in VALID_STATUSES:
+            return {
+                "statusCode": 400,
+                "body": {
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": f"Invalid debt status '{status_filter}'. Allowed: {sorted(list(VALID_STATUSES))}",
+                        "details": [{"param": "status", "allowed": sorted(list(VALID_STATUSES))}],
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+
     search_val = query_params.get("search")
-    search_query = str(search_val).strip().lower() if search_val else ""
+    search_query = str(search_val).strip().lower()[:100] if search_val else ""
 
     raw_debts = db_client.get_debts_for_business(business_id)
 
@@ -109,7 +170,7 @@ def execute_list_debts(business_id: str, query_params: Dict[str, Any]) -> Dict[s
             amount_owed=float(d.get("amount_owed", 0.0)),
             amount_cleared=float(d.get("amount_cleared", 0.0)),
             balance_remaining=float(d.get("balance_remaining", 0.0)),
-            status=DebtStatus(st) if st in [s.value for s in DebtStatus] else DebtStatus.UNPAID,
+            status=DebtStatus(st) if st in VALID_STATUSES else DebtStatus.UNPAID,
             items_summary=d.get("items_summary", ""),
             created_at=d.get("created_at", ""),
             due_date=d.get("due_date", ""),
@@ -120,7 +181,7 @@ def execute_list_debts(business_id: str, query_params: Dict[str, Any]) -> Dict[s
 
     filtered: List[Dict[str, Any]] = []
     for d in raw_debts:
-        if status_filter and d.get("status") != status_filter.upper():
+        if status_filter and d.get("status") != str(status_filter).upper():
             continue
         if search_query:
             name = d.get("debtor_name", "").lower()
@@ -154,7 +215,20 @@ def list_debts(event: Dict[str, Any], business_id: str) -> Dict[str, Any]:
 
 
 def execute_update_debt(business_id: str, debt_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure logic to update debt or log counter cash repayment."""
+    """Pure logic to update debt or log counter cash repayment with input validation."""
+    if not debt_id or len(debt_id) > 64:
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid debt ID format.",
+                    "details": [],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
     existing = db_client.get_debt_by_id(business_id, debt_id)
     if not existing:
         return {
@@ -169,9 +243,26 @@ def execute_update_debt(business_id: str, debt_id: str, body: Dict[str, Any]) ->
             }
         }
 
-    amount_to_clear = float(body.get("amount_to_clear", 0.0))
-    receipt_number = body.get("receipt_number", "CASH_RECOVERY")
-    notes = body.get("notes", "Paid in cash at shop counter")
+    raw_amt = body.get("amount_to_clear", 0.0)
+    try:
+        amount_to_clear = float(raw_amt)
+        if amount_to_clear < 0:
+            raise ValueError("Negative amount")
+    except (TypeError, ValueError):
+        return {
+            "statusCode": 400,
+            "body": {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Field 'amount_to_clear' must be a non-negative number.",
+                    "details": [{"field": "amount_to_clear", "issue": "Cannot be negative"}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        }
+
+    receipt_number = str(body.get("receipt_number", "CASH_RECOVERY"))[:50]
+    notes = str(body.get("notes", "Paid in cash at shop counter"))[:500]
 
     debt_model = DebtRecord(
         debt_id=existing.get("debt_id", ""),
@@ -228,4 +319,3 @@ def update_debt(event: Dict[str, Any], business_id: str, debt_id: str) -> Dict[s
 handle_create_debt = execute_create_debt
 handle_list_debts = execute_list_debts
 handle_update_debt = execute_update_debt
-

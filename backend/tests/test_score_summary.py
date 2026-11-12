@@ -47,6 +47,8 @@ from src.core.score_engine import (
     generate_actionable_tips,
     calculate_biashara_score,
 )
+from src.handlers.score_handler import execute_weekly_summary
+from src.wrappers.db_client import db_client
 
 
 def _build_handcrafted_week_fixtures() -> list[Transaction]:
@@ -302,7 +304,7 @@ class TestScoreAndSummaryEngine(unittest.TestCase):
         self.assertEqual(result.tier, "Needs Improvement")
         self.assertEqual(result.weekly_turnover_avg, 0.0)
         self.assertEqual(result.weekly_profit_avg, 0.0)
-        self.assertEqual(result.debt_recovery_rate, 100.0)
+        self.assertIsNone(result.debt_recovery_rate)
         self.assertGreaterEqual(len(result.actionable_tips), 2)
 
     # =========================================================================
@@ -550,6 +552,67 @@ class TestScoreAndSummaryEngine(unittest.TestCase):
             self.assertEqual(s_orig.gross_sales, s_rev.gross_sales)
             self.assertEqual(s_orig.operating_expenses, s_rev.operating_expenses)
             self.assertEqual(s_orig.estimated_profit, s_rev.estimated_profit)
+
+    def test_bug1_weekly_summary_single_iso_week_and_null_debt_recovery(self):
+        """
+        Regression tests for BUG 1:
+        1. current_week is ONE ISO week (at most 7 active trading days, Monday to Sunday).
+        2. current_week is the most recent ISO week in sample data (2026-W40).
+        3. history_series contains the 4 weeks before it (W36-W39) ordered oldest to newest, with NO overlap.
+        4. pulse_message uses single week figures (not 33 days / 195k total).
+        5. debt_recovery_rate is null and debt_recovery_score is neutral (15) when there are no debts.
+        6. tier matches docs/API_CONTRACT.md ('Gold', 'Silver', 'Bronze', 'Needs Improvement').
+        """
+        test_biz = "biz_test_bug1_validation"
+        db_client.clear_mock_store()
+        for tx in self.sample_txs:
+            tx_dict = {
+                "business_id": test_biz,
+                "receipt_number": tx.receipt_number,
+                "completion_time": tx.completion_time,
+                "details": tx.details,
+                "amount": tx.amount,
+                "direction": tx.direction.value,
+                "running_balance": tx.running_balance,
+                "status": tx.status,
+                "category": tx.category.value,
+                "categorization_method": tx.categorization_method
+            }
+            db_client.put_transaction(tx_dict)
+
+        res = execute_weekly_summary(test_biz, {"weeks": 4})
+        self.assertEqual(res["statusCode"], 200)
+        body = res["body"]
+
+        cw = body["current_week"]
+        # 1. A week must NEVER have more than 7 active days (old behaviour returned 33)
+        self.assertLessEqual(cw["active_trading_days"], 7)
+        self.assertEqual(cw["active_trading_days"], 6)
+
+        # 2. Most recent ISO week with transactions in data
+        self.assertEqual(cw["week_label"], "2026-W40")
+        self.assertEqual(cw["start_date"], "2026-09-28")
+        self.assertEqual(cw["end_date"], "2026-10-04")
+        self.assertEqual(cw["transaction_count"], 30)
+
+        # 3. Pulse message uses single week figures
+        self.assertEqual(cw["gross_sales"], 42917.44)
+        self.assertIn("You made KSh 42,917 this week, profit KSh 22,922.", cw["pulse_message"])
+
+        # 4. History series has 4 weeks before current_week, oldest to newest, no overlap
+        history = body["history_series"]
+        self.assertEqual(len(history), 4)
+        hist_labels = [h["week_label"] for h in history]
+        self.assertEqual(hist_labels, ["2026-W36", "2026-W37", "2026-W38", "2026-W39"])
+        self.assertNotIn(cw["week_label"], hist_labels)
+
+        # 5. Debt recovery rate is None/null when no debts exist
+        score_res = calculate_biashara_score(test_biz, self.sample_txs, [])
+        self.assertIsNone(score_res.debt_recovery_rate)
+        self.assertEqual(score_res.debt_recovery_score, 15)
+
+        # 6. Tier names match docs/API_CONTRACT.md
+        self.assertIn(score_res.tier, ["Gold", "Silver", "Bronze", "Needs Improvement"])
 
 
 if __name__ == "__main__":

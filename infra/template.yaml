@@ -2,13 +2,20 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   Biashara Score - AWS Serverless Architecture
-  Provisions DynamoDB Tables, S3 Upload Bucket, API Gateway, and Lambda Handlers.
+  Provisions DynamoDB Tables, S3 Upload Bucket, Cognito User Pool, API Gateway with JWT Authorizer, and Lambda Handlers.
 
 Parameters:
   Environment:
     Type: String
     Default: dev
     AllowedValues: [dev, staging, prod]
+  CorsAllowedOrigin:
+    Type: String
+    Default: 'https://app.biasharascore.com'
+    Description: Allowed origin for CORS in production/staging environments
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
 
 Globals:
   Function:
@@ -22,31 +29,87 @@ Globals:
         DYNAMODB_BUSINESS_TABLE: !Ref BusinessesTable
         DYNAMODB_DEBTS_TABLE: !Ref DebtsTable
         S3_STATEMENTS_BUCKET: !Ref StatementsBucket
+        CORS_ALLOWED_ORIGIN: !If [IsProd, !Ref CorsAllowedOrigin, 'http://localhost:3000']
         MOCK_AWS: 'false'
 
 Resources:
   # ============================================================================
+  # Amazon Cognito: User Pool & Client for Multi-Tenant Shopkeepers
+  # ============================================================================
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub 'biashara-users-${Environment}'
+      UsernameAttributes:
+        - phone_number
+      AutoVerifiedAttributes:
+        - phone_number
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      Schema:
+        - Name: shop_name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: business_id
+          AttributeDataType: String
+          Mutable: false
+          Required: false
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub 'biashara-pwa-client-${Environment}'
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+      PreventUserExistenceErrors: ENABLED
+
+  # ============================================================================
   # S3 Storage: Statement Uploads & Generated PDF Reports
+  # Hardened with PublicAccessBlock and Server-Side Encryption
   # ============================================================================
   StatementsBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub 'biashara-statements-${Environment}-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ['*']
             AllowedMethods: [GET, PUT, POST]
-            AllowedOrigins: ['*']
+            AllowedOrigins: !If
+              - IsProd
+              - [!Ref CorsAllowedOrigin]
+              - ['http://localhost:3000', 'http://127.0.0.1:3000']
             MaxAge: 3000
 
   # ============================================================================
-  # DynamoDB: 3 Core Tables (On-Demand Capacity)
+  # DynamoDB: 3 Core Tables (On-Demand Capacity & Server-Side Encryption)
   # ============================================================================
   BusinessesTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Sub 'biashara-businesses-${Environment}'
       BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
       AttributeDefinitions:
         - AttributeName: business_id
           AttributeType: S
@@ -59,6 +122,8 @@ Resources:
     Properties:
       TableName: !Sub 'biashara-transactions-${Environment}'
       BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
       AttributeDefinitions:
         - AttributeName: business_id
           AttributeType: S
@@ -88,6 +153,8 @@ Resources:
     Properties:
       TableName: !Sub 'biashara-debts-${Environment}'
       BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
       AttributeDefinitions:
         - AttributeName: business_id
           AttributeType: S
@@ -113,19 +180,31 @@ Resources:
             ProjectionType: ALL
 
   # ============================================================================
-  # Amazon API Gateway (HTTP API)
+  # Amazon API Gateway (HTTP API v2 with Cognito JWT Authorizer)
   # ============================================================================
   BiasharaHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       Name: !Sub 'biashara-api-${Environment}'
+      Auth:
+        DefaultAuthorizer: CognitoJwtAuthorizer
+        Authorizers:
+          CognitoJwtAuthorizer:
+            IdentitySource: '$request.header.Authorization'
+            JwtConfiguration:
+              Audience:
+                - !Ref CognitoUserPoolClient
+              Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'
       CorsConfiguration:
         AllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
-        AllowHeaders: ['*']
-        AllowOrigins: ['*']
+        AllowHeaders: ['Content-Type', 'Authorization']
+        AllowOrigins: !If
+          - IsProd
+          - [!Ref CorsAllowedOrigin]
+          - ['http://localhost:3000', 'http://127.0.0.1:3000']
 
   # ============================================================================
-  # AWS Lambda Functions
+  # AWS Lambda Functions with Least-Privilege IAM Policies
   # ============================================================================
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -134,15 +213,46 @@ Resources:
       Handler: src.handlers.api_handler.lambda_handler
       Description: Core HTTP API entrypoint routing all REST requests
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessesTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TransactionsTable
-        - DynamoDBCrudPolicy:
-            TableName: !Ref DebtsTable
-        - S3CrudPolicy:
-            BucketName: !Ref StatementsBucket
+        # Least privilege DynamoDB: Read & Write (Get, Put, Update, Query, BatchWrite)
+        - Statement:
+            - Sid: DynamoDBAccessPolicy
+              Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:Query
+                - dynamodb:BatchWriteItem
+              Resource:
+                - !GetAtt BusinessesTable.Arn
+                - !GetAtt TransactionsTable.Arn
+                - !Sub '${TransactionsTable.Arn}/index/*'
+                - !GetAtt DebtsTable.Arn
+                - !Sub '${DebtsTable.Arn}/index/*'
+            # Least privilege S3: Get & Put objects only (no bucket deletion or policy changes)
+            - Sid: S3ObjectAccessPolicy
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource:
+                - !Sub '${StatementsBucket.Arn}/*'
+            # Bedrock least privilege: Claude 3 Haiku invocation for fallback categorization
+            - Sid: BedrockInvokePolicy
+              Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource:
+                - !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-haiku-20240307-v1:0'
       Events:
+        HealthRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BiasharaHttpApi
+            Path: /health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         RootRoute:
           Type: HttpApi
           Properties:
@@ -163,6 +273,7 @@ Resources:
       Handler: src.handlers.cron_handler.weekly_cron_handler
       Description: Sunday 8:00 PM EAT weekly financial digest dispatch via Africa's Talking SMS
       Policies:
+        # Read-only DynamoDB policy
         - DynamoDBReadPolicy:
             TableName: !Ref BusinessesTable
         - DynamoDBReadPolicy:
@@ -184,3 +295,12 @@ Outputs:
   StatementsBucketName:
     Description: S3 Bucket for Statement Uploads
     Value: !Ref StatementsBucket
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+  CognitoUserPoolClientId:
+    Description: Cognito User Pool App Client ID
+    Value: !Ref CognitoUserPoolClient
+  CognitoIssuerUrl:
+    Description: Cognito JWT Token Issuer URL
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'

@@ -341,10 +341,12 @@ def calculate_biashara_score(
 
     total_owed = sum(float(d.amount_owed) for d in debts)
     total_cleared = sum(float(d.amount_cleared) for d in debts)
-    if total_owed > 0:
+    if not debts:
+        debt_recovery_rate = None
+    elif total_owed > 0:
         debt_recovery_rate = round((total_cleared / total_owed) * 100.0, 1)
     else:
-        debt_recovery_rate = 100.0 if not debts else 0.0
+        debt_recovery_rate = 0.0
 
     computed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
