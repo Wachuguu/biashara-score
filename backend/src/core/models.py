@@ -31,6 +31,24 @@ class DebtStatus(str, Enum):
 
 
 @dataclass
+class Business:
+    business_id: str
+    shop_name: str
+    owner_name: str
+    owner_phone: str
+    till_number: Optional[str] = None
+    created_at: str = ""
+
+
+@dataclass
+class RepaymentEntry:
+    receipt_number: str
+    amount: float
+    date: str
+    notes: Optional[str] = None
+
+
+@dataclass
 class Transaction:
     receipt_number: str
     completion_time: str
@@ -43,6 +61,8 @@ class Transaction:
     counterparty: Optional[str] = None
     categorization_method: str = "PENDING"
     debt_matched_id: Optional[str] = None
+    business_id: Optional[str] = None
+    source: str = "CSV_UPLOAD"
 
 
 @dataclass
@@ -62,6 +82,22 @@ class DebtRecord:
 
 
 @dataclass
+class WeeklySummary:
+    business_id: str
+    week_label: str
+    start_date: str
+    end_date: str
+    gross_sales: float
+    operating_expenses: float
+    estimated_profit: float
+    profit_margin_pct: float
+    active_trading_days: int
+    transaction_count: int
+    expense_breakdown: Dict[str, float] = field(default_factory=dict)
+    pulse_message: str = ""
+
+
+@dataclass
 class BiasharaScoreResult:
     business_id: str
     total_score: int  # 0 to 100
@@ -72,6 +108,6 @@ class BiasharaScoreResult:
     debt_recovery_score: int  # max 20
     weekly_turnover_avg: float
     weekly_profit_avg: float
-    debt_recovery_rate: float
-    computed_at: str
+    debt_recovery_rate: Optional[float] = None
+    computed_at: str = ""
     actionable_tips: List[str] = field(default_factory=list)

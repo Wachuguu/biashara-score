@@ -77,7 +77,16 @@ biashara-score/
 
 ---
 
-## ⚡ Zero-AWS Local Development (For Teammates)
+## 🚦 Implementation Status
+
+| Component | Status | Details |
+| :--- | :--- | :--- |
+| **Backend Core Engine** (`backend/src/core/`) | ✅ **Working** | Pure Python: M-Pesa CSV/SMS parser, rule categorizer, 4-pillar credit scoring, weekly financial pulse, customer debt tracker, ReportLab PDF generator. Zero AWS dependencies. |
+| **Backend REST API** (`backend/local_server.py`) | ✅ **Working** | FastAPI server with CORS for local development on `http://localhost:8000`. Full OpenAPI docs at `/docs`. |
+| **AWS Lambda Handlers** (`backend/src/handlers/`) | ✅ **Working** | Handlers for API Gateway HTTP API v2 & EventBridge weekly digest cron job. |
+| **AWS Infrastructure Template** (`infra/template.yaml`) | ✅ **Working** | CloudFormation SAM template with least-privilege IAM policies, DynamoDB, S3, Cognito. |
+| **Frontend PWA** (`frontend/`) | ⏳ **Not built yet** | Next.js 14 mobile-first web app is currently pending frontend sprint. |
+| **Live AWS Cloud Deployment** | ⏳ **Not built yet** | Production deployment to AWS shared account is scheduled for Phase 5 staging. |
 
 > **IMPORTANT:** Our team shares **one AWS account that only ONE person deploys to**. 
 > If you are working on features, **you do not need AWS credentials!** All parser, categorizer, debt tracking, and score logic can be executed and unit-tested locally using mock adapters and the sample CSV data.
@@ -114,14 +123,25 @@ pip install pytest
 pytest backend/tests -v
 ```
 
-### 4. Running the Frontend Locally
+### 4. Running the Local API Server
 
 ```bash
+# Start the local FastAPI server with CORS enabled
+python backend/local_server.py
+```
+Open [http://localhost:8000/docs](http://localhost:8000/docs) in your browser to interactively test all endpoints with Swagger UI.
+
+### 5. Frontend Web App (Not built yet)
+
+> [!NOTE]
+> The Next.js 14 frontend web application (`frontend/`) is **Not built yet**. The backend API is fully implemented and tested with CORS support for `http://localhost:3000` ready for when the frontend workstream begins.
+
+```bash
+# Once frontend is scaffolded:
 cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) on your browser (or use Chrome DevTools Mobile View for responsive mobile-first testing).
 
 ---
 
