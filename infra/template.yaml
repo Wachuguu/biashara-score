@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   Biashara Score - AWS Serverless Architecture
-  Provisions DynamoDB Tables, S3 Upload Bucket, Cognito User Pool, and API Gateway.
+  Provisions DynamoDB Tables, S3 Upload Bucket, API Gateway, and Lambda Handlers.
 
 Parameters:
   Environment:
@@ -120,9 +120,62 @@ Resources:
     Properties:
       Name: !Sub 'biashara-api-${Environment}'
       CorsConfiguration:
-        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+        AllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
         AllowHeaders: ['*']
         AllowOrigins: ['*']
+
+  # ============================================================================
+  # AWS Lambda Functions
+  # ============================================================================
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend
+      Handler: src.handlers.api_handler.lambda_handler
+      Description: Core HTTP API entrypoint routing all REST requests
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TransactionsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DebtsTable
+        - S3CrudPolicy:
+            BucketName: !Ref StatementsBucket
+      Events:
+        RootRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BiasharaHttpApi
+            Path: /
+            Method: ANY
+        ProxyRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BiasharaHttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+  WeeklyCronFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend
+      Handler: src.handlers.cron_handler.weekly_cron_handler
+      Description: Sunday 8:00 PM EAT weekly financial digest dispatch via Africa's Talking SMS
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BusinessesTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref TransactionsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref DebtsTable
+      Events:
+        SundayEveningSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 17 ? * SUN *)'
+            Name: BiasharaWeeklyDigestSchedule
+            Description: Triggers Sunday 8:00 PM EAT (17:00 UTC)
 
 Outputs:
   ApiEndpoint:

@@ -213,3 +213,37 @@
 
 ### Note for DevOps (Dev 4):
 - `report_generator.py` works out-of-the-box with zero third-party dependencies using standard vector graphics operators in pure Python. If you want ReportLab in the production Lambda bundle, add `reportlab>=4.0.0` to `backend/requirements.txt`.
+
+---
+
+## Workstream D: Handlers, Local Server & Infra
+- **Status:** Complete. All REST API endpoints live and passing unit and integration tests.
+- **Owned Files:**
+  - `backend/src/handlers/api_handler.py`
+  - `backend/src/handlers/statement_handler.py`
+  - `backend/src/handlers/debt_handler.py`
+  - `backend/src/handlers/score_handler.py`
+  - `backend/src/handlers/cron_handler.py`
+  - `backend/src/handlers/utils.py`
+  - `backend/local_server.py`
+  - `backend/src/wrappers/db_client.py`
+  - `infra/template.yaml`
+  - `backend/tests/test_api_endpoints.py`
+
+### Implemented Endpoints & Verification
+1. **`GET /health`**: Unauthenticated health check returning service status, environment, mock mode status, and ISO timestamp.
+2. **`GET /business` & `PUT /business`**: Profile management for duka name, owner, phone, and till number with automatic fallback to default business in mock mode.
+3. **`POST /statements/upload`**: Multipart CSV statement upload, parsing all 150 rows in `sample-data/mpesa_statement.csv`, categorizing, auto-matching customer debts (e.g. Teacher Maina), de-duplicating by `receipt_number`, and updating store records.
+4. **`POST /statements/sms`**: Quick-entry pasted SMS ingestion supporting single or multi-message blocks with de-duplication and debt matching.
+5. **`GET /transactions`**: Paginated transaction listing with filtering by `category`, `direction`, `start_date`, `end_date`, and `cursor`.
+6. **`GET /summary/weekly`**: Dashboard financial pulse computing gross sales, operating expenses, estimated net profit, profit margin %, and trailing multi-week historical series.
+7. **`POST /debts` & `GET /debts` & `PATCH /debts/{debt_id}`**: Full digital "Kitabu ya Deni" lifecycle: creating credit entries, listing with aggregate debt metrics (`total_outstanding_amount`, `recovery_rate_pct`, `delinquent_count`), and logging repayments.
+8. **`GET /score` & `POST /score/calculate`**: Real-time 4-pillar Biashara Credit Score (0–100), tier rating (Gold, Silver, Bronze, Needs Improvement), and contextual Kenyan business improvement tips.
+9. **`GET /reports/lender-pdf`**: Downloads single-page A4 lender verification PDF report.
+10. **`POST /notifications/weekly-sms`**: Generates weekly digest message and dispatches via Africa's Talking SMS API (mock stdout in offline mode).
+
+### CORS & Security Implementation
+- **CORS Support:** Configured for `http://localhost:3000` with preflight `OPTIONS` handling on both FastAPI and API Gateway Lambda handlers.
+- **Multi-Tenant Isolation:**
+  - When `MOCK_AWS=true`: accepts `X-Business-Id` header (defaults to `biz_7a8b9c0d1e2f` if omitted).
+  - When `MOCK_AWS=false`: `X-Business-Id` is strictly forbidden and rejected (403), requiring standard Cognito JWT `Bearer` tokens.
