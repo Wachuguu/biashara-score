@@ -31,6 +31,24 @@ class DebtStatus(str, Enum):
 
 
 @dataclass
+class Business:
+    business_id: str
+    shop_name: str
+    owner_name: str
+    owner_phone: str
+    till_number: Optional[str] = None
+    created_at: str = ""
+
+
+@dataclass
+class RepaymentEntry:
+    receipt_number: str
+    amount: float
+    date: str
+    notes: Optional[str] = None
+
+
+@dataclass
 class Transaction:
     receipt_number: str
     completion_time: str
@@ -43,6 +61,8 @@ class Transaction:
     counterparty: Optional[str] = None
     categorization_method: str = "PENDING"
     debt_matched_id: Optional[str] = None
+    business_id: Optional[str] = None
+    source: str = "CSV_UPLOAD"
 
 
 @dataclass
@@ -59,6 +79,22 @@ class DebtRecord:
     created_at: str = ""
     due_date: str = ""
     repayment_history: List[Dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
+class WeeklySummary:
+    business_id: str
+    week_label: str
+    start_date: str
+    end_date: str
+    gross_sales: float
+    operating_expenses: float
+    estimated_profit: float
+    profit_margin_pct: float
+    active_trading_days: int
+    transaction_count: int
+    expense_breakdown: Dict[str, float] = field(default_factory=dict)
+    pulse_message: str = ""
 
 
 @dataclass

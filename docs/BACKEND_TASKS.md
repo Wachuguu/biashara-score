@@ -1,20 +1,23 @@
 # Biashara Score — Backend Engineering Tasks & Workstreams
-**Architecture Specification for Solo Backend Implementation**  
+**Architecture Specification for Backend Implementation**  
 **Sprint Duration:** 15 Days (MVP Delivery)  
 **Strict Rule:** No overlapping files across Workstreams A, B, C, and D. Pure business logic in `core/` has zero AWS/boto3 imports.
 
 ---
 
-## 1. Workstream File Ownership Matrix
+## 1. Parallel Execution Protocol & File Ownership Matrix
 
-To guarantee clean git branching, zero merge conflicts, and modular testing, the codebase is partitioned into four strictly disjoint workstreams:
+All four workstreams (**A, B, C, and D**) run in **parallel**:
+- **Workstream D** sets up API routing, CORS, and endpoint scaffolding immediately.
+- Any endpoint whose underlying `core/` function has not yet landed will return **HTTP 501 Not Implemented** with standard error envelope `{"error": {"code": "NOT_IMPLEMENTED", "message": "Workstream in progress"}}`.
+- As Workstreams A, B, and C land their pure Python core functions, Workstream D connects the real implementations seamlessly without touching core logic files.
 
-| Workstream | Domain | Owned Production Files | Dedicated Test File |
-| :--- | :--- | :--- | :--- |
-| **Workstream A** | Ingestion & Categorization | `backend/src/core/parser.py`<br>`backend/src/core/categorizer.py` | `backend/tests/test_parser_categorizer.py` |
-| **Workstream B** | Scoring & Summary Engines | `backend/src/core/score_engine.py`<br>`backend/src/core/summary.py` *(New)* | `backend/tests/test_score_summary.py` |
-| **Workstream C** | Debt Engine, PDF & SMS | `backend/src/core/debt_engine.py`<br>`backend/src/core/report_generator.py` *(New)*<br>`backend/src/wrappers/sms_client.py` | `backend/tests/test_debt_report_sms.py` |
-| **Workstream D** | Handlers, Local Server & Infra | `backend/src/handlers/api_handler.py`<br>`backend/src/handlers/statement_handler.py`<br>`backend/src/handlers/debt_handler.py`<br>`backend/src/handlers/score_handler.py`<br>`backend/src/handlers/cron_handler.py`<br>`backend/local_server.py` *(New)*<br>`backend/src/wrappers/db_client.py`<br>`infra/template.yaml` | `backend/tests/test_api_endpoints.py` |
+| Workstream | Domain | Owned Production Files | Dedicated Test File | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Workstream A** | Ingestion & Categorization | `backend/src/core/parser.py`<br>`backend/src/core/categorizer.py` | `backend/tests/test_parser_categorizer.py` | Parallel |
+| **Workstream B** | Scoring & Summary Engines | `backend/src/core/score_engine.py`<br>`backend/src/core/summary.py` *(New)* | `backend/tests/test_score_summary.py` | Parallel |
+| **Workstream C** | Debt Engine, PDF & SMS | `backend/src/core/debt_engine.py`<br>`backend/src/core/report_generator.py` *(New)*<br>`backend/src/wrappers/sms_client.py` | `backend/tests/test_debt_report_sms.py` | Parallel |
+| **Workstream D** | Handlers, Local Server & Infra | `backend/src/handlers/api_handler.py`<br>`backend/src/handlers/statement_handler.py`<br>`backend/src/handlers/debt_handler.py`<br>`backend/src/handlers/score_handler.py`<br>`backend/src/handlers/cron_handler.py`<br>`backend/local_server.py` *(New)*<br>`backend/src/wrappers/db_client.py`<br>`infra/template.yaml` | `backend/tests/test_api_endpoints.py` | Parallel (501 Stubs) |
 
 ---
 
@@ -129,6 +132,18 @@ def categorize_batch(
    - Row 14 (`Airtime Purchase`) as `TransactionCategory.AIRTIME`.
 5. Rule-based categorization coverage on `sample-data/mpesa_statement.csv` achieves **≥ 95%** without needing LLM fallback.
 6. `parse_multiple_sms()` successfully parses a 3-SMS multi-block text and returns 3 valid `Transaction` records.
+7. **Messy Hand-Written Edge Case Test Suite:** Test suite contains 10 realistic, hand-written Kenyan transactions *not* in the sample CSV to stress-test noisy inputs:
+   - `B101`: `"B101 Confirmed. Ksh 450.00 paid to KPLC PREPAID for account 1428392019 via Paybill 888880 on 12/9/26."` -> `UTILITIES`
+   - `B102`: `"B102 Confirmed. You have sent Ksh3,200.00 to Unga Limited 222111 on 12/9/26."` -> `INVENTORY`
+   - `B103`: `"B103 Confirmed. You have received Ksh 850.00 from John Kamau 0712345678 on 12/9/26."` -> `SALES`
+   - `B104`: `"B104 Confirmed. Ksh500.00 of airtime bought on 13/9/26 at 8:00 AM."` -> `AIRTIME`
+   - `B105`: `"B105 Confirmed. Transfer of Ksh12,000.00 to Landlord Mutua for Duka Rent Oct on 13/9/26."` -> `RENT`
+   - `B106`: `"B106 Confirmed. Ksh 2,000.00 sent to Self / Personal Draw Mama Mary on 13/9/26."` -> `OWNER_DRAW`
+   - `B107`: `"B107 Confirmed. Received Ksh 1,100.00 from Dennis Omondi deni ya unga cleared on 14/9/26."` -> `DEBT_RECOVERY`
+   - `B108`: `"B108 Confirmed. Ksh 4,500.00 sent to Brookside Dairies Milk Supplies on 14/9/26."` -> `INVENTORY`
+   - `B109`: `"B109 Confirmed. Ksh 650.00 paid to Nairobi City Water and Sewerage on 15/9/26."` -> `UTILITIES`
+   - `B110`: `"B110 Confirmed. Received Ksh 350.00 from Mama Boi 0728192837 for sukuma wiki on 15/9/26."` -> `SALES`  
+   *All 10 must parse and categorize accurately without raising exceptions.*
 
 ---
 
@@ -146,7 +161,7 @@ def categorize_batch(
 # backend/src/core/summary.py
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from .models import Transaction, TransactionCategory
+from .models import Transaction, TransactionCategory, WeeklySummary
 
 def calculate_weekly_summary(
     transactions: List[Transaction],
@@ -187,7 +202,7 @@ def compute_consistency_score(transactions: List[Transaction]) -> int:
     Pillar 1 (Max 30 pts): Income Consistency & Frequency.
     Evaluates:
     - Trading days per week (>5 days/week = full points).
-    - Variance in daily sales deposits over 30 days.
+    - Regularity of daily deposits.
     """
     ...
 
@@ -196,7 +211,7 @@ def compute_growth_score(weekly_summaries: List[Dict[str, Any]]) -> int:
     Pillar 2 (Max 25 pts): Revenue Volume & Growth.
     Evaluates:
     - Average monthly turnover (>KSh 40,000 for typical duka).
-    - Week-over-week growth trajectory across the 4-week window.
+    - Week-over-week growth trajectory.
     """
     ...
 
@@ -239,41 +254,28 @@ def calculate_biashara_score(
 ) -> BiasharaScoreResult:
     """
     Computes total score (0 to 100) = consistency + growth + margin + debt.
-    Assigns tier:
-    - 80-100: 'Gold'
-    - 65-79: 'Silver'
-    - 50-64: 'Bronze'
-    - <50: 'Needs Improvement'
-    Returns fully populated BiasharaScoreResult dataclass.
+    Assigns tier ('Gold', 'Silver', 'Bronze', 'Needs Improvement').
     """
     ...
 ```
 
 #### 2.2.3 Edge Cases to Handle
-1. **Zero Transactions (Cold Start):**
-   - New business with 0 transactions must return a valid `BiasharaScoreResult` with score 0, tier `"Needs Improvement"`, and helpful tips to upload statements without throwing `ZeroDivisionError`.
-2. **Negative Profit / High Restocking Week:**
-   - When a shop restocks heavily (e.g. rent + 3 sacks of maize flour) in week 1, expenses exceed sales. `profit_margin_pct` must handle negative values cleanly, clamping the margin score pillar to 0 without arithmetic underflow.
-3. **Out-of-Order Timestamps:**
-   - Statement rows may not be sorted chronologically. All summary calculations must parse ISO timestamps and group by true calendar date/week.
-4. **Zero Extended Debts:**
-   - Duka owner who operates strictly cash-and-carry has 0 debts in `biashara-debts`. Debt score should award default neutral points (e.g. 15/20) rather than failing a division by zero (`total_cleared / total_owed`).
+1. **Zero Transactions (Cold Start):** Returns valid `BiasharaScoreResult` with score 0, tier `"Needs Improvement"`, without `ZeroDivisionError`.
+2. **Negative Profit Weeks:** High restocking week handled cleanly; margin score clamped to 0.
+3. **Out-of-Order Timestamps:** Correct grouping using ISO timestamps.
+4. **Zero Extended Debts:** Neutral baseline (15/20) without division-by-zero errors.
 
 #### 2.2.4 "Done When" Test Scenario
 **File:** `backend/tests/test_score_summary.py`  
 **Assertions:**
-1. Evaluates transactions from `sample-data/mpesa_statement.csv` (September 2026 data).
+1. Evaluates transactions from `sample-data/mpesa_statement.csv`.
 2. `calculate_multi_week_series()` yields 4 consecutive weekly summaries with valid sales, expenses, and positive net profits.
 3. `calculate_biashara_score()` produces:
    - `0 <= total_score <= 100`
-   - `consistency_score <= 30`
-   - `growth_score <= 25`
-   - `expense_ratio_score <= 25`
-   - `debt_recovery_score <= 20`
    - `total_score == consistency_score + growth_score + expense_ratio_score + debt_recovery_score`
    - `tier in ["Gold", "Silver", "Bronze", "Needs Improvement"]`
    - `len(actionable_tips) >= 2`
-4. Executes with empty lists `transactions=[]` and `debts=[]`: returns cleanly without throwing `ZeroDivisionError`.
+4. Executes with empty lists without throwing `ZeroDivisionError`.
 
 ---
 
@@ -306,10 +308,7 @@ def match_repayment_to_debt(
     open_debts: List[DebtRecord]
 ) -> Optional[Tuple[DebtRecord, float]]:
     """
-    Matches an incoming transaction to an open debt:
-    1. Phone match: tx counterparty phone matches debtor_phone.
-    2. Name match: debtor_name substring appears in tx details.
-    Returns (matched_debt, payment_amount) or None.
+    Matches incoming payment to an open debt via normalized phone or debtor name substring.
     """
     ...
 
@@ -321,18 +320,13 @@ def apply_debt_repayment(
     notes: str = ""
 ) -> DebtRecord:
     """
-    Applies payment to debt:
-    - Increments amount_cleared.
-    - Decrements balance_remaining (capped at 0.0).
-    - Sets status to DebtStatus.CLEARED if balance_remaining == 0, else DebtStatus.PARTIAL.
-    - Appends entry to repayment_history: [{'receipt_number': ..., 'amount': ..., 'date': ..., 'notes': ...}].
+    Decrements balance_remaining (capped at 0.0), updates status, and appends to repayment_history.
     """
     ...
 
 def calculate_debt_metrics(debts: List[DebtRecord]) -> Dict[str, Any]:
     """
-    Calculates aggregate metrics for the debt dashboard:
-    total_outstanding_amount, total_cleared_amount, recovery_rate_pct, unpaid_count, delinquent_count.
+    Calculates aggregate metrics: total_outstanding_amount, total_cleared_amount, recovery_rate_pct, etc.
     """
     ...
 ```
@@ -349,16 +343,8 @@ def generate_lender_pdf(
     debt_summary: Dict[str, Any],
 ) -> bytes:
     """
-    Generates a professional, single-page A4 PDF financial verification report
-    using ReportLab (pure Python, zero OS-level binary dependencies).
-    Contains:
-    - Business header (Name, Owner, Till number, Date range).
-    - Biashara Score Badge & Tier ('Silver - 78/100').
-    - 4 Pillar Scores breakdown table.
-    - 4-week Sales & Profit cashflow table.
-    - Digital Kitabu debt health summary.
-    - Lender verification stamp & footer.
-    Returns binary PDF bytes (starts with b'%PDF-').
+    Generates a single-page A4 PDF financial verification report using ReportLab.
+    Returns binary PDF bytes (b'%PDF-...').
     """
     ...
 ```
@@ -381,48 +367,42 @@ def build_weekly_sms_message(
     """
     Constructs the Safaricom-compliant SMS digest string:
     'Habari Mary! Biashara Score Summary for W36: Sales KSh 38,450, Expenses KSh 26,800, Est. Profit KSh 11,650. Outstanding Debts: KSh 3,200. Score: 78/100 (Silver). Keep growing!'
-    Ensures message remains concise, friendly, and clean.
     """
     ...
 
 class AfricaTalkingSMSClient:
     def send_sms(self, phone_number: str, message: str) -> Dict[str, Any]:
         """
-        Dispatches SMS via Africa's Talking API.
-        When MOCK_AWS=true, prints to stdout and returns mock success payload.
+        Dispatches SMS via Africa's Talking API (prints to stdout when MOCK_AWS=true).
         """
         ...
 ```
 
 #### 2.3.3 Edge Cases to Handle
-1. **Phone Number Variations:**
-   - Kenyan numbers entered as `0712345678`, `254712345678`, `+254712345678`, or `011...` (Safaricom newer prefix). Normalizer must unify all to `+254...` before comparison.
-2. **Overpayment & Partial Repayments:**
-   - Debtor owes KSh 1,200 and sends KSh 1,500. `balance_remaining` must not become negative (`max(0.0, balance - amount)`), status must be `CLEARED`, and the overpayment amount logged in notes.
-3. **Pure-Python PDF Generation in Lambda:**
-   - Must use `reportlab` standard canvas and flowables without requiring external C libraries, Cairo, or headless browser binaries so it runs seamlessly inside AWS Lambda and local machines.
-4. **SMS Character Length & Number Formatting:**
-   - Large floating numbers must be formatted with commas and zero decimals (`KSh 14,200` instead of `KSh 14200.000000001`).
+1. **Phone Normalization:** Unifies `07...`, `01...`, `254...`, `+254...`.
+2. **Overpayment & Partial Payments:** Capping cleared balance at 0.0, updating status `PARTIAL` vs `CLEARED`.
+3. **Pure-Python PDF Generation:** Uses ReportLab standard canvas with zero OS-level binary dependencies.
+4. **SMS Character Length:** Clean number formatting with commas and no ugly floating decimals.
 
 #### 2.3.4 "Done When" Test Scenario
 **File:** `backend/tests/test_debt_report_sms.py`  
 **Assertions:**
-1. Tests matching sample statement row `SK067BQRKW` (`Teacher Maina 254719283746 - KSh 1,526.05`) against a sample `DebtRecord` for Teacher Maina:
-   - Correctly matches by phone number.
-   - `apply_debt_repayment()` reduces `balance_remaining` to 0.0 and sets status to `DebtStatus.CLEARED`.
+1. Tests matching sample statement row `SK067BQRKW` against a sample `DebtRecord`:
+   - Matches by phone.
+   - Reduces `balance_remaining` to 0.0 and sets status to `DebtStatus.CLEARED`.
 2. Tests `generate_lender_pdf()`:
-   - Returns non-empty `bytes`.
-   - Starts with `b"%PDF-"`.
-   - Size exceeds 3,000 bytes.
+   - Returns bytes starting with `b"%PDF-"` and size > 3,000 bytes.
 3. Tests `build_weekly_sms_message()`:
-   - Result string starts with `"Habari "` and contains `"Sales KSh "`, `"Est. Profit KSh "`, and `"Score: "`.
-   - Length is ≤ 200 characters.
-4. `sms_client.send_sms()` succeeds in mock mode without throwing network errors.
+   - Formats correctly and stays ≤ 200 characters.
+4. `sms_client.send_sms()` succeeds in mock mode without errors.
 
 ---
 
 ### 2.4 Workstream D: Handlers, Local Server & SAM Routes
 **Primary Domain:** Thin AWS Lambda adapters, local FastAPI mock server with CORS for `http://localhost:3000`, database client wrapper updates, and `template.yaml` routing.
+
+> [!IMPORTANT]
+> **Parallel Scaffolding & 501 Stubs:** Workstream D implements all route contracts immediately. Any route awaiting core implementations from Workstream A, B, or C will return **HTTP 501 Not Implemented**. As core functions land, Workstream D wires them up without touching core files.
 
 #### 2.4.1 Files Owned
 - `backend/src/handlers/api_handler.py`
@@ -452,26 +432,12 @@ class DatabaseClient:
 ```
 
 ```python
-# backend/src/handlers/
-# Thin Lambda handlers parsing API Gateway v2 HTTP event and delegating to core/
-def upload_statement_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-def sms_statement_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-def list_transactions_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-def weekly_summary_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-def debt_router_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-def score_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-def lender_pdf_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-def weekly_cron_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]: ...
-```
-
-```python
-# backend/local_server.py
-# FastAPI application serving identical endpoints for local frontend development
+# backend/local_server.py (FastAPI App with CORS)
 from fastapi import FastAPI, UploadFile, File, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-app = FastAPI(title="Biashara Score Local API", version="1.0.0")
+app = FastAPI(title="Biashara Score Local API", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -481,93 +447,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Implements all 10 REST endpoints matching docs/API_CONTRACT.md exactly
+# Implements all REST endpoints matching docs/API_CONTRACT.md exactly
+# Unimplemented core functions return HTTP 501:
+# raise HTTPException(status_code=501, detail={"error": {"code": "NOT_IMPLEMENTED", "message": "Pending core module"}})
 ```
 
-```yaml
-# infra/template.yaml Updates
-# Add API Gateway HTTP Routes and Lambda definitions:
-# - POST /statements/upload
-# - POST /statements/sms
-# - GET  /transactions
-# - GET  /summary/weekly
-# - POST /debts
-# - GET  /debts
-# - PATCH /debts/{debt_id}
-# - GET  /score
-# - POST /score/calculate
-# - GET  /reports/lender-pdf
-# - POST /notifications/weekly-sms
-# - EventBridge Rule for Sunday 8:00 PM EAT
-```
-
-#### 2.4.3 Edge Cases to Handle
-1. **CORS Preflight in Local Server:**
-   - Browser preflight `OPTIONS` requests from `http://localhost:3000` must return 200 with proper `Access-Control-Allow-Origin` and `Access-Control-Allow-Headers`.
-2. **Binary / PDF Streaming in API Gateway vs FastAPI:**
-   - API Gateway HTTP API requires base64 encoding with `isBase64Encoded: true` for binary responses, whereas FastAPI returns `Response(content=pdf_bytes, media_type="application/pdf")`.
-3. **Multipart/Form-Data Parsing in Serverless Lambda:**
-   - Statement upload endpoint must cleanly extract file content whether received via FastAPI `UploadFile` locally or API Gateway base64-encoded body in Lambda.
-4. **Multi-Tenant Identification:**
-   - If `Authorization` header is present, extract `business_id` from token claims; if running locally or `X-Business-Id` header is passed, fallback gracefully.
-
-#### 2.4.4 "Done When" Test Scenario
+#### 2.4.3 "Done When" Test Scenario
 **File:** `backend/tests/test_api_endpoints.py`  
 **Assertions:**
-1. Using FastAPI `TestClient(app)`:
-   - `POST /statements/upload` with `sample-data/mpesa_statement.csv`: returns HTTP `200` with `total_rows_parsed == 150`.
-   - `POST /statements/sms`: returns HTTP `201` with parsed transactions.
-   - `GET /transactions`: returns HTTP `200` with transaction list.
-   - `GET /summary/weekly`: returns HTTP `200` with `current_week` and `history_series`.
-   - `POST /debts`: creates new debt, returns HTTP `201`.
-   - `GET /debts`: lists debts including newly created debt, returns HTTP `200`.
-   - `PATCH /debts/{debt_id}`: logs payment, returns HTTP `200`.
-   - `GET /score`: returns HTTP `200` with score result.
-   - `GET /reports/lender-pdf`: returns HTTP `200`, `Content-Type: application/pdf`, and valid binary content.
-   - `POST /notifications/weekly-sms`: returns HTTP `200` with mock SMS response.
-2. CORS headers are returned for `Origin: http://localhost:3000`.
+1. Tests `GET /health`: returns HTTP `200` with `status == "healthy"`.
+2. Tests `GET /business` and `PUT /business`: updates and fetches business metadata.
+3. Tests `POST /statements/upload` and `POST /statements/sms`: de-duplicates by receipt_number and returns `{imported, skipped_duplicates, debts_auto_matched}`.
+4. Tests `GET /transactions`, `GET /summary/weekly`, `POST /debts`, `GET /debts`, `PATCH /debts/{id}`, `GET /score`, `GET /reports/lender-pdf`, `POST /notifications/weekly-sms`.
+5. Validates CORS headers for `Origin: http://localhost:3000`.
 
 ---
 
-## 3. Recommended Implementation Dependency Order
-
-Because you are a solo developer implementing the entire backend, follow this sequential dependency path to minimize context switching and ensure each layer builds upon verified underlying logic:
+## 3. Parallel Execution Strategy & Coordination
 
 ```mermaid
 flowchart TD
-    subgraph Step 1: Ingestion & Rules [Phase 1: Ingestion Engine]
-        A1["Workstream A: core/parser.py"] --> A2["Workstream A: core/categorizer.py"]
-        A2 --> A3["backend/tests/test_parser_categorizer.py"]
+    subgraph Parallel Workstreams [Simultaneous Workstreams]
+        WA["Workstream A: Ingestion & Rules<br>(core/parser.py, core/categorizer.py)"]
+        WB["Workstream B: Summary & Score<br>(core/score_engine.py, core/summary.py)"]
+        WC["Workstream C: Debts, PDF & SMS<br>(core/debt_engine.py, core/report_generator.py, sms_client.py)"]
+        WD["Workstream D: Scaffolding & Server<br>(local_server.py, handlers/, template.yaml)"]
     end
 
-    subgraph Step 2: Metrics & Scoring [Phase 2: Analytics Engine]
-        A3 --> B1["Workstream B: core/summary.py"]
-        B1 --> B2["Workstream B: core/score_engine.py"]
-        B2 --> B3["backend/tests/test_score_summary.py"]
-    end
+    WD -- "Stub 501 until core lands" --> WA
+    WD -- "Stub 501 until core lands" --> WB
+    WD -- "Stub 501 until core lands" --> WC
 
-    subgraph Step 3: Debts, Reports & SMS [Phase 3: Business Services]
-        A3 --> C1["Workstream C: core/debt_engine.py"]
-        B3 --> C2["Workstream C: core/report_generator.py"]
-        C1 --> C3["Workstream C: wrappers/sms_client.py"]
-        C2 --> C4["backend/tests/test_debt_report_sms.py"]
-        C3 --> C4
-    end
+    WA -- "Lands parser & categorizer" --> WD
+    WB -- "Lands summary & score" --> WD
+    WC -- "Lands debt, PDF, SMS" --> WD
 
-    subgraph Step 4: Handlers & Local Server [Phase 4: API & Server]
-        C4 --> D1["Workstream D: db_client.py extensions"]
-        D1 --> D2["Workstream D: local_server.py (FastAPI)"]
-        D2 --> D3["Workstream D: handlers/*.py"]
-        D3 --> D4["Workstream D: infra/template.yaml"]
-        D4 --> D5["backend/tests/test_api_endpoints.py"]
-    end
+    WD --> WDFinal["All 10 Endpoints Live & Passing Tests"]
 ```
-
-### Execution Phases:
-1. **Phase 1 (Workstream A):** Build `parser.py` and `categorizer.py`. Verify with `test_parser_categorizer.py` on `sample-data/mpesa_statement.csv`. (Est: 1-2 days)
-2. **Phase 2 (Workstream B):** Build `summary.py` and `score_engine.py`. Verify with `test_score_summary.py`. (Est: 1-2 days)
-3. **Phase 3 (Workstream C):** Build `debt_engine.py`, `report_generator.py`, and `sms_client.py`. Verify with `test_debt_report_sms.py`. (Est: 2 days)
-4. **Phase 4 (Workstream D):** Build `local_server.py` (FastAPI) first so frontend can integrate immediately, then write thin Lambda `handlers/` and update `infra/template.yaml`. Verify with `test_api_endpoints.py`. (Est: 2 days)
 
 ---
 
@@ -575,9 +491,9 @@ flowchart TD
 
 | # | Risk Description | Severity | Impact | Concrete Mitigation |
 | :- | :--- | :---: | :---: | :--- |
-| **R-1** | **Safaricom Statement Format Inconsistency:** M-Pesa CSV exports occasionally vary headers or date formats between consumer app and business web portal. | **High** | Parser failure during duka onboarding. | Implement resilient header normalization in `parser.py` (case-insensitive strip, fuzzy column matching for `Receipt`, `Time`, `Details`, `Paid In`, `Withdrawn`, `Balance`). Support both `YYYY-MM-DD HH:MM:SS` and `DD/MM/YYYY HH:MM:SS`. |
-| **R-2** | **Bedrock LLM Latency & Cost Spill:** Ambiguous transactions sent sequentially to Bedrock Claude 3 Haiku could slow down statement upload and exceed free tier budget. | **Medium** | Slow upload response (>15s), higher AWS bills. | The rule engine must handle ≥95% of transactions locally. For remaining ambiguous rows, invoke Bedrock in batches or fallback to default heuristic (`INVENTORY` for OUT, `SALES` for IN) if Bedrock latency exceeds 2 seconds. |
-| **R-3** | **ReportLab Lambda Package Size & Cold Start:** PDF libraries can introduce bloated dependencies or fail due to missing font libraries. | **Medium** | Lambda packaging errors or deployment bloat. | Use standard `reportlab` with built-in Helvetica fonts only. Do not install heavy external libraries like Cairo or Chromium. Keep Lambda package < 35MB. |
-| **R-4** | **Debt Reconciliation False Positives:** A customer might send an M-Pesa payment for a new cash purchase that accidentally gets credited against an old debt. | **Medium** | Incorrect debt clearing in "Kitabu ya Deni". | Require explicit matching heuristics: (1) exact phone number match AND (2) either matching amount or explicit reference in transaction details/note. Expose an undo/revert endpoint in API (`PATCH /debts/{id}`). |
-| **R-5** | **SMS Gateway Latency & Failures:** Africa's Talking API timeouts during scheduled Sunday 8:00 PM cron run. | **Low** | Weekly SMS not delivered on time. | Add a 5-second timeout on SMS HTTP requests, log delivery status in DynamoDB, and decouple cron calculation from SMS sending with an idempotent retry guard. |
-| **R-6** | **Local Server vs Lambda Parity Drift:** Discrepancy between FastAPI behavior locally and API Gateway + Lambda in AWS. | **Medium** | Works on developer machine but fails when Dev 4 deploys to staging. | Keep Lambda handlers paper-thin: handlers only translate API Gateway event `dict` into typed arguments and call the exact same `core/` functions that `local_server.py` calls. |
+| **R-1** | **Safaricom Statement Format Inconsistency:** M-Pesa CSV exports occasionally vary headers or date formats between consumer app and business portal. | **High** | Parser failure during duka onboarding. | Implement resilient header normalization in `parser.py` (case-insensitive strip, fuzzy column matching). Support multiple datetime formats. |
+| **R-2** | **Bedrock LLM Latency & Cost Spill:** Ambiguous transactions sent sequentially to Bedrock Claude 3 Haiku could slow down statement upload. | **Medium** | Slow upload response (>15s), higher AWS bills. | The rule engine must handle ≥95% of transactions locally. Fallback to default heuristic if Bedrock call exceeds 2 seconds. |
+| **R-3** | **ReportLab Lambda Package Size & Cold Start:** PDF libraries can introduce bloated dependencies. | **Medium** | Lambda packaging errors or deployment bloat. | Use standard `reportlab` with built-in fonts only. Keep Lambda package < 35MB. |
+| **R-4** | **Debt Reconciliation False Positives:** A customer might send an M-Pesa payment for a new cash purchase that accidentally gets credited against an old debt. | **Medium** | Incorrect debt clearing in "Kitabu ya Deni". | Require explicit matching heuristics (normalized phone + amount/details check). Expose manual update endpoint `PATCH /debts/{id}`. |
+| **R-5** | **SMS Gateway Latency & Failures:** Africa's Talking API timeouts during scheduled Sunday 8:00 PM cron run. | **Low** | Weekly SMS not delivered on time. | Add a 5-second timeout on SMS HTTP requests, log delivery status in DynamoDB, and decouple cron calculation from SMS sending. |
+| **R-6** | **Local Server vs Lambda Parity Drift:** Discrepancy between FastAPI behavior locally and API Gateway + Lambda in AWS. | **Medium** | Works on developer machine but fails when Dev 4 deploys to staging. | Keep Lambda handlers paper-thin: handlers only translate API Gateway events and call the exact same `core/` functions that `local_server.py` calls. |
