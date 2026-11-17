@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { BookOpen, Phone, Plus, Search } from "lucide-react";
 import { api } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
@@ -121,9 +121,9 @@ export default function DeniPage() {
         ) : (
           <ul className="divide-y-2 divide-rule">
             {list.map((d, i) => (
-              <motion.li key={d.debt_id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04, duration: 0.2 }}>
+              <m.li key={d.debt_id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04, duration: 0.2 }}>
                 <DebtRow debt={d} onPay={() => setPaying(d)} />
-              </motion.li>
+              </m.li>
             ))}
           </ul>
         )}

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { Check, ChevronRight, Store } from "lucide-react";
 import { api } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
@@ -118,7 +118,7 @@ export default function SetupPage() {
             {profiles.map((p, i) => {
               const active = p.business_id === activeId;
               return (
-                <motion.li key={p.business_id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 6) * 0.04, duration: 0.2 }}>
+                <m.li key={p.business_id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 6) * 0.04, duration: 0.2 }}>
                   <button
                     type="button"
                     onClick={() => choose(p)}
@@ -131,7 +131,7 @@ export default function SetupPage() {
                     </span>
                     {active ? <Check aria-label="Open now" className="h-6 w-6 text-cobalt" /> : <ChevronRight aria-hidden className="h-6 w-6 text-ink-soft" />}
                   </button>
-                </motion.li>
+                </m.li>
               );
             })}
           </ul>

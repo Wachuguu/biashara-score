@@ -1,6 +1,6 @@
 "use client";
 import { forwardRef } from "react";
-import { motion, type HTMLMotionProps } from "motion/react";
+import { m, type HTMLMotionProps } from "motion/react";
 import { Loader2 } from "lucide-react";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -32,7 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 ) {
   const isDisabled = disabled || loading;
   return (
-    <motion.button
+    <m.button
       ref={ref}
       type={type}
       whileTap={isDisabled ? undefined : { scale: 0.97 }}
@@ -44,6 +44,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     >
       {loading && <Loader2 aria-hidden className="h-5 w-5 motion-safe:animate-spin" />}
       {children}
-    </motion.button>
+    </m.button>
   );
 });

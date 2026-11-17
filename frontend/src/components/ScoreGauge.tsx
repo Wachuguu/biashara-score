@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { animate, motion, useReducedMotion } from "motion/react";
+import { animate, m, useReducedMotion } from "motion/react";
 
 const R = 84;
 const CX = 100;
@@ -33,7 +33,7 @@ export function ScoreGauge({ score }: { score: number }) {
       <svg viewBox="0 0 200 112" className="block w-full" aria-hidden>
         <path d={ARC} fill="none" stroke="#14213D" strokeOpacity={0.14} strokeWidth={18} strokeLinecap="round" />
         {value > 0 && (
-          <motion.path
+          <m.path
             d={ARC}
             fill="none"
             stroke="#14213D"

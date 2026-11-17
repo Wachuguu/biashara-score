@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import type { Score } from "@/api/types";
 
 const PILLARS: { key: keyof Score; label: string; hint: string; max: number }[] = [
@@ -36,7 +36,7 @@ export function PillarBars({ score }: { score: Score }) {
               aria-valuemax={p.max}
               aria-valuenow={v}
             >
-              <motion.div
+              <m.div
                 className="h-full origin-left rounded-full bg-chart-sales"
                 style={{ width: `${pct * 100}%` }}
                 initial={{ scaleX: 0 }}

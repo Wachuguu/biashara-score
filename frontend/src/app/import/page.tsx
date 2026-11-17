@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { FileUp, MessageSquareText, ReceiptText } from "lucide-react";
 import { api } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
@@ -122,21 +122,20 @@ export default function ImportPage() {
             ["csv", "Statement file", FileUp],
             ["sms", "Paste SMS", MessageSquareText],
           ] as const
-        ).map(([m, label, Icon]) => (
+        ).map(([value, label, Icon]) => (
           <button
-            key={m}
+            key={value}
             role="tab"
             type="button"
-            aria-selected={mode === m}
+            aria-selected={mode === value}
             onClick={() => {
-              setMode(m);
+              setMode(value);
               setSubmitError(null);
             }}
-            className={`relative flex min-h-[44px] items-center justify-center gap-2 rounded-sm font-bold ${mode === m ? "text-ink" : "text-ink-soft"}`}
+            className={`flex min-h-[44px] items-center justify-center gap-2 rounded-sm font-bold transition-colors duration-200 ${mode === value ? "bg-maize text-ink" : "text-ink-soft"}`}
           >
-            {mode === m && <motion.span layoutId="import-tab" className="absolute inset-0 rounded-sm bg-maize" transition={{ duration: 0.22 }} />}
-            <Icon aria-hidden className="relative h-5 w-5" />
-            <span className="relative">{label}</span>
+            <Icon aria-hidden className="h-5 w-5" />
+            {label}
           </button>
         ))}
       </div>
@@ -190,7 +189,7 @@ export default function ImportPage() {
 
       <AnimatePresence>
         {summary && (
-          <motion.section
+          <m.section
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -211,7 +210,7 @@ export default function ImportPage() {
             <Link href="/dashboard" className="mt-3 inline-flex min-h-tap items-center font-bold text-cobalt underline underline-offset-4">
               See your score
             </Link>
-          </motion.section>
+          </m.section>
         )}
       </AnimatePresence>
 
@@ -257,14 +256,14 @@ export default function ImportPage() {
           ) : (
             <ul className="divide-y-2 divide-rule">
               {list.map((tx, i) => (
-                <motion.li
+                <m.li
                   key={tx.receipt_number}
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i, 8) * 0.03, duration: 0.2 }}
                 >
                   <TxRow tx={tx} onCategoryClick={setPicking} />
-                </motion.li>
+                </m.li>
               ))}
             </ul>
           )}

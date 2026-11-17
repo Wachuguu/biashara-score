@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useId, useRef } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { X } from "lucide-react";
 
 interface SheetProps {
@@ -38,7 +38,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">
-          <motion.div
+          <m.div
             className="absolute inset-0 bg-ink/50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -47,7 +47,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             onClick={onClose}
             aria-hidden
           />
-          <motion.div
+          <m.div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
@@ -74,7 +74,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
               </button>
             </div>
             {children}
-          </motion.div>
+          </m.div>
         </div>
       )}
     </AnimatePresence>

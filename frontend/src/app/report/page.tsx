@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { BadgeCheck, CircleCheck, Download, FileText } from "lucide-react";
 import { api } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
@@ -107,7 +107,7 @@ export default function ReportPage() {
 
       <AnimatePresence mode="wait">
         {state === "done" && (
-          <motion.div
+          <m.div
             key="done"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -126,12 +126,12 @@ export default function ReportPage() {
                 </a>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
         {state === "error" && error && (
-          <motion.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+          <m.div key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
             <ErrorState message={error} onRetry={download} />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

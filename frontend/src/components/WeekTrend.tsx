@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import type { WeekPoint } from "@/api/types";
 import { formatCompact, formatKSh, shortWeek } from "@/utils/format";
 import { useWidth } from "@/utils/useWidth";
@@ -79,7 +79,7 @@ export function WeekTrend({ weeks }: { weeks: WeekPoint[] }) {
             const isSel = i === sel;
             return (
               <g key={w.week_label} opacity={isSel ? 1 : 0.55}>
-                <motion.path
+                <m.path
                   d={colPath(xs, geo.barW, y0, geo.y(w.gross_sales))}
                   fill={SALES}
                   style={{ originY: 1 }}
@@ -87,7 +87,7 @@ export function WeekTrend({ weeks }: { weeks: WeekPoint[] }) {
                   animate={{ scaleY: 1 }}
                   transition={{ duration: 0.3, delay: i * 0.04 }}
                 />
-                <motion.path
+                <m.path
                   d={colPath(xp, geo.barW, y0, geo.y(w.estimated_profit))}
                   fill={PROFIT}
                   style={{ originY: w.estimated_profit >= 0 ? 1 : 0 }}

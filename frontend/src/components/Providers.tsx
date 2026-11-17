@@ -1,11 +1,13 @@
 "use client";
-import { MotionConfig } from "motion/react";
+import { LazyMotion, MotionConfig, domAnimation } from "motion/react";
 import { ToastProvider } from "./Toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <MotionConfig reducedMotion="user">
-      <ToastProvider>{children}</ToastProvider>
-    </MotionConfig>
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion="user">
+        <ToastProvider>{children}</ToastProvider>
+      </MotionConfig>
+    </LazyMotion>
   );
 }

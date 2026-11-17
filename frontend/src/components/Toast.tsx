@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { CircleAlert, CircleCheck } from "lucide-react";
 
 type Tone = "success" | "error";
@@ -32,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-[calc(theme(spacing.nav)+var(--safe-bottom)+0.75rem)] z-[60] flex justify-center px-4">
         <AnimatePresence>
           {toast && (
-            <motion.div
+            <m.div
               key={toast.id}
               initial={{ opacity: 0, y: 12, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -43,14 +43,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               }`}
             >
               {toast.tone === "success" ? (
-                <motion.span initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
+                <m.span initial={{ scale: 0.4 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
                   <CircleCheck aria-hidden className="h-6 w-6 text-leaf" />
-                </motion.span>
+                </m.span>
               ) : (
                 <CircleAlert aria-hidden className="h-6 w-6 shrink-0 text-chili" />
               )}
               <span>{toast.message}</span>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

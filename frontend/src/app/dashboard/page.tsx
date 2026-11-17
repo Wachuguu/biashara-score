@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { motion, type Variants } from "motion/react";
+import { m, type Variants } from "motion/react";
 import { FileUp, Lightbulb, MessageSquareText, TrendingDown, TrendingUp } from "lucide-react";
 import { api } from "@/api/endpoints";
 import type { WeekPoint } from "@/api/types";
@@ -56,7 +56,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* Hero: the painted signboard */}
-      <motion.section custom={0} variants={card} initial="hidden" animate="show" aria-labelledby="score-h" className="rounded-sign border-3 border-ink bg-maize px-4 pb-5 pt-4 shadow-board">
+      <m.section custom={0} variants={card} initial="hidden" animate="show" aria-labelledby="score-h" className="rounded-sign border-3 border-ink bg-maize px-4 pb-5 pt-4 shadow-board">
         <h1 id="score-h" className="text-2xl leading-none">
           Biashara Score
         </h1>
@@ -79,10 +79,10 @@ export default function DashboardPage() {
             </div>
           </>
         ) : null}
-      </motion.section>
+      </m.section>
 
       {/* This week */}
-      <motion.section custom={1} variants={card} initial="hidden" animate="show" className="panel p-4" aria-labelledby="week-h">
+      <m.section custom={1} variants={card} initial="hidden" animate="show" className="panel p-4" aria-labelledby="week-h">
         <div className="mb-3 flex items-baseline justify-between gap-2">
           <h2 id="week-h" className="text-2xl">
             This week
@@ -123,11 +123,11 @@ export default function DashboardPage() {
             )}
           </>
         ) : null}
-      </motion.section>
+      </m.section>
 
       {/* Score pillars + tips */}
       {score.data && (
-        <motion.section custom={2} variants={card} initial="hidden" animate="show" className="panel p-4" aria-labelledby="pillars-h">
+        <m.section custom={2} variants={card} initial="hidden" animate="show" className="panel p-4" aria-labelledby="pillars-h">
           <h2 id="pillars-h" className="mb-3 text-2xl">
             What builds your score
           </h2>
@@ -145,21 +145,21 @@ export default function DashboardPage() {
               </ul>
             </div>
           )}
-        </motion.section>
+        </m.section>
       )}
 
       {/* Trend */}
       {weeks.length > 1 && (
-        <motion.section custom={3} variants={card} initial="hidden" animate="show" className="panel p-4" aria-labelledby="trend-h">
+        <m.section custom={3} variants={card} initial="hidden" animate="show" className="panel p-4" aria-labelledby="trend-h">
           <h2 id="trend-h" className="mb-2 text-2xl">
             Last {weeks.length} weeks
           </h2>
           <WeekTrend weeks={weeks} />
-        </motion.section>
+        </m.section>
       )}
 
       {/* Recent */}
-      <motion.section custom={4} variants={card} initial="hidden" animate="show" className="panel px-4 pt-4" aria-labelledby="recent-h">
+      <m.section custom={4} variants={card} initial="hidden" animate="show" className="panel px-4 pt-4" aria-labelledby="recent-h">
         <div className="flex items-baseline justify-between">
           <h2 id="recent-h" className="text-2xl">
             Recent
@@ -185,7 +185,7 @@ export default function DashboardPage() {
             ))}
           </ul>
         )}
-      </motion.section>
+      </m.section>
     </div>
   );
 }
