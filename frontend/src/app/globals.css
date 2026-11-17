@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-paper text-ink font-sans text-base antialiased;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+  button,
+  [role="button"],
+  a {
+    touch-action: manipulation;
+  }
+  :focus-visible {
+    outline: 3px solid #2340a8;
+    outline-offset: 2px;
+  }
+  /* Inputs at 16px+ so mobile browsers don't zoom on focus */
+  input,
+  textarea,
+  select {
+    font-size: 1.0625rem;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display font-extrabold tracking-tight;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-lg border-2 border-ink bg-card;
+  }
+  .field {
+    @apply block w-full rounded-md border-2 border-ink/70 bg-card px-3 min-h-[48px] text-ink placeholder:text-ink-faint;
+  }
+  .field:focus {
+    @apply border-cobalt outline-none ring-2 ring-cobalt/30;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-bold text-ink;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Kitabu ya Deni exercise-book page: ruled lines + red margin */
+  .ruled {
+    background-color: #fff;
+    background-image: linear-gradient(to right, transparent 27px, #b42a23 27px, #b42a23 29px, transparent 29px);
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: calc(var(--safe-bottom) + 0.75rem);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+}
