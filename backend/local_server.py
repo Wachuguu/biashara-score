@@ -24,6 +24,8 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.core.models import TransactionCategory
+
 from src.wrappers.db_client import (
     db_client,
     DEFAULT_TEST_BUSINESS,
@@ -330,6 +332,51 @@ def list_transactions(
     }
     res = execute_list_transactions(biz_id, qp)
     return _unwrap_result(res)
+
+
+@app.patch("/transactions/{receipt_number}", tags=["Ingestion"])
+async def update_transaction_category(
+    receipt_number: str = Path(...),
+    request: Request = None,
+    authorization: Optional[str] = Header(None),
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Lets the shop owner correct a transaction's category (marks it USER_CORRECTED)."""
+    biz_id = _get_tenant_business_id(authorization, x_business_id)
+    try:
+        body = await request.json()
+    except Exception:
+        body = None
+    valid = [c.value for c in TransactionCategory]
+    category = body.get("category") if isinstance(body, dict) else None
+    if category not in valid:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": f"Field 'category' must be one of: {', '.join(valid)}.",
+                    "details": [{"field": "category", "issue": "Invalid category"}],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+    updated = db_client.update_transaction(
+        biz_id, receipt_number, {"category": category, "categorization_method": "USER_CORRECTED"}
+    )
+    if updated is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": {
+                    "code": "RESOURCE_NOT_FOUND",
+                    "message": f"Transaction '{receipt_number}' not found.",
+                    "details": [],
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+    return JSONResponse(content=updated, status_code=200)
 
 
 # ============================================================================

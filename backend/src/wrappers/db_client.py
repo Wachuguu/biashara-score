@@ -76,6 +76,29 @@ class DatabaseClient:
         )
         return response.get("Items", [])
 
+    def update_transaction(self, business_id: str, receipt_number: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Applies field updates to one transaction. Returns the updated record, or None if not found."""
+        if self.mock:
+            key = f"{business_id}#{receipt_number}"
+            tx = _LOCAL_STORE["transactions"].get(key)
+            if not tx:
+                return None
+            tx.update(updates)
+            return dict(tx)
+        # Transactions table is keyed on completion_time_receipt; locate the item first.
+        from boto3.dynamodb.conditions import Key, Attr
+        response = self.tx_table.query(
+            KeyConditionExpression=Key("business_id").eq(business_id),
+            FilterExpression=Attr("receipt_number").eq(receipt_number)
+        )
+        items = response.get("Items", [])
+        if not items:
+            return None
+        item = items[0]
+        item.update(updates)
+        self.tx_table.put_item(Item=item)
+        return item
+
     # -------------------------------------------------------------------------
     # Debts ("Kitabu ya Deni")
     # -------------------------------------------------------------------------

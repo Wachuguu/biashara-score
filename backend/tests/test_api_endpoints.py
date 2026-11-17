@@ -230,6 +230,34 @@ class TestApiEndpoints(unittest.TestCase):
     # ========================================================================
     # 7. Kitabu ya Deni: Create, List & Update Debts
     # ========================================================================
+    def test_correct_transaction_category(self):
+        headers = {"X-Business-Id": "biz_cat_fix"}
+        self.client.post(
+            "/statements/upload",
+            files={"file": ("statement.csv", self.sample_csv_content, "text/csv")},
+            headers=headers,
+        )
+        tx = self.client.get("/transactions?limit=1", headers=headers).json()["transactions"][0]
+        new_cat = "RENT" if tx["category"] != "RENT" else "UTILITIES"
+
+        res = self.client.patch(f"/transactions/{tx['receipt_number']}", json={"category": new_cat}, headers=headers)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["category"], new_cat)
+        self.assertEqual(res.json()["categorization_method"], "USER_CORRECTED")
+
+        again = self.client.get("/transactions?limit=1", headers=headers).json()["transactions"][0]
+        self.assertEqual(again["category"], new_cat)
+
+        # Tenant isolation: another business cannot touch it
+        other = self.client.patch(f"/transactions/{tx['receipt_number']}", json={"category": "SALES"}, headers={"X-Business-Id": "biz_other"})
+        self.assertEqual(other.status_code, 404)
+        self.assertEqual(other.json()["error"]["code"], "RESOURCE_NOT_FOUND")
+
+    def test_correct_transaction_category_rejects_invalid(self):
+        res = self.client.patch("/transactions/SKNOPE", json={"category": "SNACKS"}, headers={"X-Business-Id": "biz_cat_fix"})
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json()["error"]["code"], "VALIDATION_ERROR")
+
     def test_kitabu_ya_deni_lifecycle(self):
         test_biz = "biz_kitabu_test"
 
