@@ -19,15 +19,8 @@ export function formatCompact(value: number): string {
 
 // Backend timestamps are shop-local times written with a "Z" suffix (from the
 // M-Pesa CSV), so render them in UTC to show the time exactly as on the statement.
-const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
-const dateTimeFmt = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: "UTC",
-});
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pad = (n: number) => String(n).padStart(2, "0");
 
 function toDate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
@@ -37,12 +30,12 @@ function toDate(iso: string | null | undefined): Date | null {
 
 export function formatDate(iso: string | null | undefined): string {
   const d = toDate(iso);
-  return d ? dateFmt.format(d) : "—";
+  return d ? `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}` : "—";
 }
 
 export function formatDateTime(iso: string | null | undefined): string {
   const d = toDate(iso);
-  return d ? dateTimeFmt.format(d) : "—";
+  return d ? `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}` : "—";
 }
 
 export function daysSince(iso: string | null | undefined): number | null {

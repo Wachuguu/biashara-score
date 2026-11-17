@@ -21,6 +21,8 @@ const config: Config = {
         cobalt: { DEFAULT: "#2340A8", deep: "#1A3185", soft: "#E3E9F8" }, // actions
         leaf: { DEFAULT: "#17663D", soft: "#DDF0E3" }, // money in / profit
         chili: { DEFAULT: "#B42A23", soft: "#F8DEDB" }, // owed / loss / margin line
+        // Chart marks: validated with dataviz validate_palette.js (light, white surface)
+        chart: { sales: "#3556C4", profit: "#1F8A52", track: "#E3E9F8", grid: "#E4E8F0" },
       },
       fontFamily: {
         display: ["var(--font-display)", "Impact", "Arial Narrow", "sans-serif"],
