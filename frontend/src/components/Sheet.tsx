@@ -14,10 +14,12 @@ interface SheetProps {
 export function Sheet({ open, onClose, title, children }: SheetProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeRef.current();
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -30,7 +32,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
       document.body.style.overflow = prev;
       window.clearTimeout(t);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return (
     <AnimatePresence>
