@@ -32,6 +32,22 @@ export default function DashboardPage() {
   const recent = useApi(id ? `recent:${id}` : null, () => api.listTransactions({ limit: 6 }));
 
   const noData = recent.data?.total_count === 0;
+  const allFailed = !!(score.error && weekly.error && recent.error);
+
+  if (allFailed) {
+    return (
+      <div className="mt-4">
+        <ErrorState
+          message={score.error ?? "Could not load your duka."}
+          onRetry={() => {
+            score.reload();
+            weekly.reload();
+            recent.reload();
+          }}
+        />
+      </div>
+    );
+  }
 
   if (noData) {
     return (

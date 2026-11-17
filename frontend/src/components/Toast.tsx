@@ -29,7 +29,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastCtx.Provider value={show}>
       {children}
-      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-[calc(theme(spacing.nav)+var(--safe-bottom)+0.75rem)] z-[60] flex justify-center px-4">
+      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-[calc(theme(spacing.nav)+var(--safe-bottom)+0.75rem)] z-[45] flex justify-center px-4">
         <AnimatePresence>
           {toast && (
             <m.div
