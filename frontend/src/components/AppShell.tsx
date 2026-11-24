@@ -8,7 +8,7 @@ import { useActiveDuka } from "@/hooks/useActiveDuka";
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Home", icon: Store },
   { href: "/import", label: "Import", icon: Upload },
-  { href: "/deni", label: "Deni", icon: BookOpen },
+  { href: "/deni", label: "Debts", icon: BookOpen },
   { href: "/report", label: "Report", icon: FileText },
 ];
 

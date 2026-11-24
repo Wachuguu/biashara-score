@@ -56,7 +56,7 @@
   .num {
     font-variant-numeric: tabular-nums;
   }
-  /* Kitabu ya Deni exercise-book page: ruled lines + red margin */
+  /* Customer Debt ledger page: ruled lines + red margin */
   .ruled {
     background-color: #fff;
     background-image: linear-gradient(to right, transparent 27px, #b42a23 27px, #b42a23 29px, transparent 29px);

@@ -6,7 +6,7 @@ const PILLARS: { key: keyof Score; label: string; hint: string; max: number }[] 
   { key: "consistency_score", label: "Cashflow consistency", hint: "Selling most days of the week", max: 30 },
   { key: "growth_score", label: "Sales volume", hint: "How much you sell each week", max: 25 },
   { key: "expense_ratio_score", label: "Operating margin", hint: "Spending kept below sales", max: 25 },
-  { key: "debt_recovery_score", label: "Debt recovery", hint: "Customers paying their deni", max: 20 },
+  { key: "debt_recovery_score", label: "Debt recovery", hint: "Customers paying their debt", max: 20 },
 ];
 
 /** Four meters, each against its own maximum. One hue; values in text tokens. */

@@ -1,6 +1,6 @@
 # Biashara Score: frontend PWA
 
-A mobile-first Next.js 14 Progressive Web App for duka owners: import M-Pesa statements, see the Biashara Score, keep the Kitabu ya Deni, and download a lender report.
+A mobile-first Next.js 14 Progressive Web App for shop owners: import M-Pesa statements, see the Biashara Score, track Customer Debts, and download a lender report.
 
 - **Stack:** Next.js 14 (App Router) with TypeScript, Tailwind CSS 3, `lucide-react` icons and `motion` for animation. There's no UI kit and no chart library; the charts are hand-built SVG.
 - **Target:** 360px-wide Android phones on patchy data. Every screen has loading, empty and error states.
@@ -48,7 +48,7 @@ Then open http://localhost:3000. Tap **Open demo shop**, or create a duka. Go to
 | `/setup` | Create, switch or demo a duka profile | `PUT /business`, `GET /business` |
 | `/import` | Upload CSV or paste SMS, then review and fix categories | `POST /statements/upload`, `POST /statements/sms`, `GET /transactions`, `PATCH /transactions/{receipt}` |
 | `/dashboard` | Score gauge, 4 pillars, tips, this week's pulse, weekly trend, recent transactions | `GET /score`, `GET /summary/weekly`, `GET /transactions` |
-| `/deni` | Kitabu ya Deni: summary, search and filter, add debt, record payment | `GET /debts`, `POST /debts`, `PATCH /debts/{id}` |
+| `/deni` | Customer Debts: summary, search and filter, add debt, record payment | `GET /debts`, `POST /debts`, `PATCH /debts/{id}` |
 | `/report` | Download the lender PDF | `GET /reports/lender-pdf` |
 | `/offline` | Service-worker fallback when there's no connection | none |
 

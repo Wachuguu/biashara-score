@@ -10,7 +10,7 @@ const body = Atkinson_Hyperlegible({ subsets: ["latin"], weight: ["400", "700"],
 
 export const metadata: Metadata = {
   title: { default: "Biashara Score", template: "%s · Biashara Score" },
-  description: "Know your duka's real profit, track Kitabu ya Deni, and get a lender-ready Biashara Score.",
+  description: "Know your shop's real profit, track customer debts, and get a lender-ready Biashara Score.",
   applicationName: "Biashara Score",
   appleWebApp: { capable: true, title: "Biashara", statusBarStyle: "default" },
   icons: {

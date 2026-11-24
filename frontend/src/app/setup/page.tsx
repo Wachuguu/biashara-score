@@ -105,8 +105,8 @@ export default function SetupPage() {
     <div className="space-y-8">
       <div className="rounded-sign border-3 border-ink bg-maize px-5 py-6 shadow-board">
         <p className="font-display text-xl font-extrabold">Biashara Score</p>
-        <h1 className="mt-1 text-sign font-black">Karibu.</h1>
-        <p className="mt-3 max-w-sm text-lg">See your real profit, keep your Kitabu ya Deni, and show lenders your shop is strong.</p>
+        <h1 className="mt-1 text-sign font-black">Welcome.</h1>
+        <p className="mt-3 max-w-sm text-lg">See your real profit, track customer debts, and show lenders your shop is strong.</p>
       </div>
 
       {profiles.length > 0 && (

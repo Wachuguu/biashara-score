@@ -200,7 +200,7 @@ export default function ImportPage() {
             <p className="font-display text-2xl font-extrabold">{summary.imported === 1 ? "1 transaction added" : `${summary.imported} transactions added`}</p>
             <ul className="mt-1 space-y-0.5 text-sm">
               {summary.skipped > 0 && <li>{summary.skipped} were already saved, so we skipped them.</li>}
-              {summary.matched > 0 && <li>{summary.matched} matched a customer&apos;s deni and were marked paid.</li>}
+              {summary.matched > 0 && <li>{summary.matched} matched a customer&apos;s debt and were marked paid.</li>}
               {summary.range && (
                 <li>
                   Covers {formatDate(summary.range.start)} to {formatDate(summary.range.end)}.

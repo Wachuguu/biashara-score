@@ -14,7 +14,7 @@ const INCLUDED = [
   "Your Biashara Score and tier",
   "Weekly sales and profit from M\u2011Pesa",
   "Average sale size and busy days",
-  "Kitabu ya Deni health",
+  "Customer debt health",
 ];
 
 function fileName(shop?: string) {

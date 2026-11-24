@@ -50,11 +50,11 @@ export default function DeniPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl leading-none">Kitabu ya Deni</h1>
+          <h1 className="text-3xl leading-none">Customer Debts</h1>
           <p className="text-ink-soft">Who owes you, and how much.</p>
         </div>
         <Button onClick={() => setAdding(true)} size="lg" className="w-full sm:w-auto">
-          <Plus aria-hidden className="h-5 w-5" /> Add deni
+          <Plus aria-hidden className="h-5 w-5" /> Add debt
         </Button>
       </div>
 
@@ -99,7 +99,7 @@ export default function DeniPage() {
       <section aria-label="Debts" className="ruled overflow-hidden rounded-lg border-2 border-ink">
         {debts.loading && !debts.data ? (
           <div className="py-2 pl-10 pr-4">
-            <LoadingBlock label="Loading deni" lines={4} />
+            <LoadingBlock label="Loading debts" lines={4} />
           </div>
         ) : debts.error ? (
           <div className="py-4 pl-10 pr-4">
@@ -108,12 +108,12 @@ export default function DeniPage() {
         ) : list.length === 0 ? (
           <EmptyState
             icon={BookOpen}
-            title={filtered ? "No match" : "Kitabu is empty"}
+            title={filtered ? "No match" : "Debt list is empty"}
             body={filtered ? "Try another name or filter." : "When a customer takes goods on credit, add it here so you never forget."}
             action={
               !filtered && (
                 <Button onClick={() => setAdding(true)}>
-                  <Plus aria-hidden className="h-5 w-5" /> Add deni
+                  <Plus aria-hidden className="h-5 w-5" /> Add debt
                 </Button>
               )
             }
@@ -134,7 +134,7 @@ export default function DeniPage() {
         onClose={() => setAdding(false)}
         onSaved={(d) => {
           setAdding(false);
-          toast(`Deni saved for ${d.debtor_name}`);
+          toast(`Debt saved for ${d.debtor_name}`);
           setRefresh((n) => n + 1);
         }}
       />
@@ -253,7 +253,7 @@ function AddDebtSheet({ open, onClose, onSaved }: { open: boolean; onClose: () =
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Add deni">
+    <Sheet open={open} onClose={onClose} title="Add debt">
       <form noValidate onSubmit={submit} className="space-y-4 pb-2">
         <FormField label="Customer name" error={errors.name}>
           <input className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Mama Boi" maxLength={100} autoComplete="off" />
@@ -272,7 +272,7 @@ function AddDebtSheet({ open, onClose, onSaved }: { open: boolean; onClose: () =
         </FormField>
         {serverError && <ErrorState message={serverError} compact />}
         <Button type="submit" size="lg" block loading={saving}>
-          Save deni
+          Save debt
         </Button>
       </form>
     </Sheet>
