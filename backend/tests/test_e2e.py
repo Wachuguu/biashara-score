@@ -5,7 +5,7 @@ Tests:
    - Update business profile
    - Upload sample M-Pesa CSV statement (150 transactions)
    - Re-upload same CSV to verify 100% deduplication (all 150 skipped)
-   - Create customer debt in Kitabu ya Deni
+   - Create customer debt in Debt Ledger
    - Ingest matching repayment SMS and verify automatic debt reconciliation to CLEARED
    - Retrieve financial weekly summary & multi-week series
    - Calculate Biashara Credit Score and verify 4 pillars and valid tier names
@@ -137,7 +137,7 @@ class TestBiasharaScoreE2EJourney(unittest.TestCase):
         self.assertEqual(upload2_data["skipped_duplicates"], 150)
 
         # --------------------------------------------------------------------
-        # Step 4: Add a Customer Debt to Kitabu ya Deni (POST /debts)
+        # Step 4: Add a Customer Debt to Debt Ledger (POST /debts)
         # --------------------------------------------------------------------
         debt_payload = {
             "debtor_name": "Dennis Omondi",
@@ -182,7 +182,7 @@ class TestBiasharaScoreE2EJourney(unittest.TestCase):
         self.assertEqual(reconciled_tx["category"], "DEBT_RECOVERY")
         self.assertEqual(reconciled_tx["debt_matched_id"], debt_id)
 
-        # Verify debt record is now CLEARED in Kitabu ya Deni
+        # Verify debt record is now CLEARED in Debt Ledger
         res_debts_list = self.client.get("/debts", headers=self.auth_headers)
         self.assertEqual(res_debts_list.status_code, 200)
         debts_list_data = res_debts_list.json()
@@ -302,7 +302,7 @@ class TestBiasharaScoreE2EJourney(unittest.TestCase):
         self.assertEqual(disp_data["business_id"], self.test_biz)
         self.assertEqual(disp_data["recipient_phone"], "+254712345678")
         self.assertIn("sms_text", disp_data)
-        self.assertIn("Habari", disp_data["sms_text"])
+        self.assertIn("Hello", disp_data["sms_text"])
         self.assertIn("provider_response", disp_data)
         self.assertEqual(disp_data["provider_response"]["mode"], "mock")
         self.assertIn("dispatched_at", disp_data)
@@ -365,7 +365,7 @@ class TestBiasharaScoreE2EJourney(unittest.TestCase):
         invalid_phones = ["12345", "not-a-phone", "+12345678901", "0201234567"]
 
         for bad_phone in invalid_phones:
-            # 1. Kitabu ya Deni: POST /debts
+            # 1. Debt Ledger: POST /debts
             bad_debt = {
                 "debtor_name": "Test Debtor",
                 "debtor_phone": bad_phone,

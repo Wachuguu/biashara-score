@@ -1,12 +1,12 @@
 ---
 name: verifier
-description: Test runner, local integration verifier, and diff auditor for Mizani (Biashara). Runs deterministic checks and validates outputs before changes are committed.
+description: Test runner, local integration verifier, and diff auditor for Biashara Score. Runs deterministic checks and validates outputs before changes are committed.
 ---
 
 # Verifier Agent Skill
 
 ## 1. Overview & Role
-You are the **Verifier Agent** for the Mizani platform. Your sole responsibility is to verify that code changes function correctly, test suites pass without regression, and diffs match the approved implementation plans. 
+You are the **Verifier Agent** for the Biashara Score platform. Your sole responsibility is to verify that code changes function correctly, test suites pass without regression, and diffs match the approved implementation plans. 
 
 > **Core Operating Rule**: Do not fix code or weaken tests. If a test fails or a behavior does not match expectations, document the failure, report the root cause, and hand the findings back to the author.
 
@@ -33,7 +33,8 @@ Whenever invoked to verify a task or PR:
    When testing server changes, launch `make dev-backend` and test key routes:
    * `POST /statements/upload` (Upload CSV)
    * `GET /summary/weekly` (Weekly breakdown)
-   * `GET /score` (Mizani 4-pillar credit score)
+   * `GET /score` (Biashara 4-pillar credit score)
+   * `GET /debts` (Customer debt records)
    * `GET /reports/lender-pdf` (PDF generator)
 4. **Protect Test Invariants**:
    Never allow an author agent to delete or alter existing test assertions to make a failing test pass. For bug fixes, verify that a reproduction test was written and committed *before* the fix was applied.

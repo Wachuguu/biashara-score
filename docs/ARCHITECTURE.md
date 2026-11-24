@@ -52,7 +52,7 @@ Biashara Score uses a modern, cost-effective, serverless architecture on AWS. It
    - `UploadStatementHandler`: Presigned S3 URLs + asynchronous statement parsing.
    - `ProcessTransactionsHandler`: Regex rule engine with Bedrock LLM fallback.
    - `ScoreCalculationHandler`: Evaluates 4 pillars of the Biashara Score.
-   - `DebtTrackerHandler`: Manages "Kitabu ya Deni" customer credit and reconciliations.
+   - `DebtTrackerHandler`: Manages "Customer Debt Ledger" customer credit and reconciliations.
    - `WeeklySummaryCronHandler`: Triggered by EventBridge to calculate weekly metrics and dispatch Africa's Talking SMS.
 5. **Database (Amazon DynamoDB):** On-demand serverless NoSQL storage for sub-10ms transactional reads/writes.
 6. **Object Storage (Amazon S3):** Stores raw M-Pesa CSV uploads and generated lender-ready PDF reports.
@@ -155,7 +155,7 @@ Stores parsed and categorized M-Pesa transactions.
 ---
 
 ### 3.3 Table: `biashara-debts`
-Digitizes the shopkeeper's "Kitabu ya Deni" (Customer Credit Book).
+Digitizes the shopkeeper's "Customer Debt Ledger" (Customer Credit Book).
 
 - **Primary Key:**
   - Partition Key (`PK`): `business_id` (String)

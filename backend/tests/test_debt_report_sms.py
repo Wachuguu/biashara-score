@@ -458,7 +458,7 @@ class TestDebtReportSMS(unittest.TestCase):
         )
 
         expected = (
-            "Habari Mary! Biashara Score Summary for W36: "
+            "Hello Mary! Biashara Score Summary for W36: "
             "Sales KSh 38,450, Expenses KSh 26,800, Est. Profit KSh 11,650. "
             "Outstanding Debts: KSh 3,200. Score: 78/100 (Silver). Keep growing!"
         )

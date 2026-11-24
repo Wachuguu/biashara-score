@@ -1,5 +1,5 @@
 """
-Kitabu ya Deni - Customer Debt Tracking Engine (Pure Python)
+Customer Debt Tracking Engine (Pure Python)
 Handles debt balance updates, payment matching, and repayment logs.
 No AWS / boto3 dependencies.
 """

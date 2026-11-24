@@ -12,7 +12,7 @@ We are a team of 4 engineers delivering an MVP in 15 days. We share **one AWS ac
 | Team Member | Primary Domain | Core Focus Areas |
 | :--- | :--- | :--- |
 | **Dev 1 (Backend Core & Logic)** | Core Algorithms | Statement parsing, Rule Engine, Bedrock fallback interface, Biashara Score calculation. |
-| **Dev 2 (Backend Services & Debt)** | Business Services | Kitabu ya Deni (Debt tracker), Debt reconciliation logic, Africa's Talking SMS integration, PDF report generator. |
+| **Dev 2 (Backend Services & Debt)** | Business Services | Customer Debt Ledger (Debt tracker), Debt reconciliation logic, Africa's Talking SMS integration, PDF report generator. |
 | **Dev 3 (Frontend & Mobile UI)** | Next.js / Tailwind PWA | Mobile-first UI, statement upload UX, weekly profit dashboard, debt ledger views, PDF preview. |
 | **Dev 4 (DevOps Lead & Deployer)** | Infra & Deployment | AWS SAM templates, API Gateway routes, Lambda packaging, DynamoDB tables, S3 triggers, and CI/CD. |
 

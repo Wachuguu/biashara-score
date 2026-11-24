@@ -207,7 +207,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if path == "/reports/lender-pdf" and method == "GET":
             return _format_response(download_lender_pdf(event, business_id), origin=origin)
 
-        # 5. Debt Engine ("Kitabu ya Deni") Endpoints
+        # 5. Customer Debt Ledger Endpoints
         if path == "/debts" and method == "POST":
             return _format_response(create_debt(event, business_id), origin=origin)
 

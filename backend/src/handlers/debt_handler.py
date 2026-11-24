@@ -1,5 +1,5 @@
 """
-Debt Handler: Digital Kitabu ya Deni (Customer Debt Tracking)
+Debt Handler: Customer Debt Tracking
 Implements:
 - POST /debts (with input validation for name, phone, amount)
 - GET /debts (with status and search query validation)
@@ -35,7 +35,7 @@ def is_valid_phone(phone: str) -> bool:
 
 
 def execute_create_debt(business_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
-    """Pure logic to create customer debt record in Kitabu ya Deni with strict validation."""
+    """Pure logic to create customer debt record in Debt Ledger with strict validation."""
     if not isinstance(body, dict):
         return {
             "statusCode": 400,

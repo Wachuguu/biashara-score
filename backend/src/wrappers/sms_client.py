@@ -47,7 +47,7 @@ def build_weekly_sms_message(
     debts_fmt = f"{int(round(outstanding_debts)):,}"
 
     msg = (
-        f"Habari {first_name}! Biashara Score Summary for {week_part}: "
+        f"Hello {first_name}! Biashara Score Summary for {week_part}: "
         f"Sales KSh {sales_fmt}, Expenses KSh {expenses_fmt}, Est. Profit KSh {profit_fmt}. "
         f"Outstanding Debts: KSh {debts_fmt}. Score: {int(score)}/100 ({tier}). Keep growing!"
     )
@@ -56,19 +56,19 @@ def build_weekly_sms_message(
 
 class AfricaTalkingSMSClient:
     def __init__(self):
-        self.mock = MOCK_MODE
+        self.mock = os.getenv("MOCK_SMS", os.getenv("MOCK_AWS", "true")).lower() == "true"
         self.username = os.getenv("AFRICAS_TALKING_USERNAME", "sandbox")
         self.api_key = os.getenv("AFRICAS_TALKING_API_KEY", "")
-        self.sender_id = os.getenv("AFRICAS_TALKING_SENDER_ID", "BIASHARA")
+        self.sender_id = os.getenv("AFRICAS_TALKING_SENDER_ID", "")
 
     def send_sms(self, phone_number: str, message: str) -> Dict[str, Any]:
         """
-        Sends an SMS to a Kenyan phone number (+254...).
+        Sends an SMS to a phone number (+254...).
         Logs only sanitized/masked metadata without leaking personal phone numbers or customer names.
         Returns a response dict with status, recipient, mode, and cost.
         """
         masked = mask_phone_number(phone_number)
-        if self.mock or not self.api_key:
+        if (self.mock and not os.getenv("FORCE_LIVE_SMS")) or not self.api_key:
             # Safe sanitized log: no personal names or full phone numbers
             print(f"[LOCAL SMS MOCK to {masked}]: Dispatched financial digest notification (chars: {len(message)})")
             return {
@@ -84,7 +84,12 @@ class AfricaTalkingSMSClient:
             }
 
         import requests
-        url = "https://api.africastalking.com/version1/messaging"
+        is_sandbox = self.username.lower() == "sandbox"
+        url = (
+            "https://api.sandbox.africastalking.com/version1/messaging"
+            if is_sandbox
+            else "https://api.africastalking.com/version1/messaging"
+        )
         headers = {
             "ApiKey": self.api_key,
             "Accept": "application/json",
@@ -93,10 +98,12 @@ class AfricaTalkingSMSClient:
         data = {
             "username": self.username,
             "to": phone_number,
-            "message": message,
-            "from": self.sender_id
+            "message": message
         }
-        response = requests.post(url, headers=headers, data=data, timeout=5)
+        if self.sender_id and not is_sandbox:
+            data["from"] = self.sender_id
+
+        response = requests.post(url, headers=headers, data=data, timeout=10)
         return response.json()
 
 

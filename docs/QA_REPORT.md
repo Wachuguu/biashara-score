@@ -10,7 +10,7 @@
 ## 1. Executive Summary
 
 A comprehensive end-to-end (E2E) quality assurance evaluation was performed against the Biashara Score backend API via `TestClient`. The evaluation tested:
-1. **A Complete End-to-End User Journey:** Business profile update, initial M-Pesa CSV upload (150 rows), duplicate upload deduplication, manual debt creation in Kitabu ya Deni, matching repayment SMS ingestion with automatic reconciliation, weekly financial intelligence summary, 4-pillar credit scoring and tier classification, lender verification PDF generation, and Africa's Talking weekly SMS digest dispatch.
+1. **A Complete End-to-End User Journey:** Business profile update, initial M-Pesa CSV upload (150 rows), duplicate upload deduplication, manual debt creation in Customer Debt Ledger, matching repayment SMS ingestion with automatic reconciliation, weekly financial intelligence summary, 4-pillar credit scoring and tier classification, lender verification PDF generation, and Africa's Talking weekly SMS digest dispatch.
 2. **Robust Bad Input & Negative Tests:** Empty statement files, non-CSV and binary files, wrong header columns, oversized payloads (>5MB limit), malformed phone numbers across endpoints, negative/zero debt amounts, and unauthenticated/missing `X-Business-Id` tenant isolation checks.
 3. **API Contract & Schema Parity:** Exact field name parity against `docs/API_CONTRACT.md`, valid tier naming (`"Gold"`, `"Silver"`, `"Bronze"`, `"Needs Improvement"`), and standard error envelope structure (`{"error": {"code", "message", "details", "timestamp"}}`).
 
@@ -113,7 +113,7 @@ Every endpoint's response shape was validated against `docs/API_CONTRACT.md`:
 ### What Works Completely (100% Verified):
 - **Full Ingestion Lifecycle:** M-Pesa CSV parsing (150 rows), deduplication by `receipt_number`, SMS ingestion, and auto-matching inbound payments to debtor records.
 - **Credit Scoring & Tier Engine:** 4-pillar calculation (Consistency, Growth, Margin, Debt Discipline) strictly adhering to 0–100 range and standardized credit tier names (`Gold`, `Silver`, `Bronze`, `Needs Improvement`).
-- **Kitabu ya Deni:** Debt creation, phone normalization (`+254...`), repayment logging, partial/cleared status transitions, and aggregate metrics.
+- **Customer Debt Ledger:** Debt creation, phone normalization (`+254...`), repayment logging, partial/cleared status transitions, and aggregate metrics.
 - **Reporting & Notifications:** A4 lender verification PDF generation (both ReportLab and fallback pure vector engine) and Africa's Talking weekly SMS digest formatting.
 - **Negative Input & Tenant Security:** Rejection of empty, non-CSV, binary, and oversized files, invalid phone formats, negative debt amounts, and unauthenticated tenant calls.
 - **Test Automation:** 59 automated pytest unit, integration, security, and E2E tests passing offline with `MOCK_AWS=true`.

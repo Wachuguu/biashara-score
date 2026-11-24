@@ -395,7 +395,7 @@ def get_weekly_summary(
 
 
 # ============================================================================
-# 2.4 Customer Debt Tracker ("Kitabu ya Deni")
+# 2.4 Customer Debt Tracker
 # ============================================================================
 @app.post("/debts", status_code=201, tags=["Debts"])
 async def create_debt(
@@ -403,7 +403,7 @@ async def create_debt(
     authorization: Optional[str] = Header(None),
     x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
 ):
-    """Adds a new credit entry to Kitabu ya Deni."""
+    """Adds a new credit entry to the Customer Debt Ledger."""
     biz_id = _get_tenant_business_id(authorization, x_business_id)
     body = await request.json()
     res = execute_create_debt(biz_id, body)

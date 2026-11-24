@@ -1,5 +1,5 @@
-# Mizani (formerly Biashara Score)
-Micro-Business Financial Intelligence & Credit Readiness Engine (Kenyan MSMEs / Dukas)
+# Biashara Score
+Micro-Business Financial Intelligence & Credit Readiness Engine (Kenyan MSMEs / Retailers)
 
 ## Commands
 - Test Backend: `make test-backend` or `PYTHONPATH=. ./venv/bin/pytest backend/tests`
@@ -21,9 +21,9 @@ Micro-Business Financial Intelligence & Credit Readiness Engine (Kenyan MSMEs / 
 - `backend/src/core/parser.py`: Deterministic Safaricom M-Pesa CSV & SMS statement parser.
 - `backend/src/core/categorizer.py`: Rules-first categorizer with Bedrock (Claude 3 Haiku) fallback.
 - `backend/src/core/score.py`: 4-pillar credit readiness scoring engine (0–100 index).
-- `backend/src/core/debt.py`: Kitabu ya Deni debt management & repayment reconciliation.
+- `backend/src/core/debt.py`: Customer Debt Ledger management & repayment reconciliation.
 - `backend/src/core/pdf_generator.py`: ReportLab single-page lender verification report.
-- `frontend/src/app/`: Mobile-first PWA views (Upload, Weekly Summary, Kitabu ya Deni, PDF preview).
+- `frontend/src/app/`: Mobile-first PWA views (Upload, Weekly Summary, Debt Ledger, PDF preview).
 - `infra/template.yaml`: AWS SAM serverless infrastructure specification.
 
 ## Things Agents Get Wrong

@@ -10,12 +10,12 @@
 
 ## 📖 What is Biashara Score?
 
-Over **7.4 million micro and small businesses** in Kenya operate almost entirely on cash and M-Pesa. Because they lack audited books and formal collateral, **traditional banks and SACCOs reject up to 85% of their loan applications**. Additionally, shopkeepers lose 10%–25% of their hard-earned income to forgotten customer debts scribbled in paper notebooks (*"Kitabu ya Deni"*) and lack clear visibility into their real weekly profit.
+Over **7.4 million micro and small businesses** in Kenya operate almost entirely on cash and M-Pesa. Because they lack audited books and formal collateral, **traditional banks and SACCOs reject up to 85% of their loan applications**. Additionally, shopkeepers lose 10%–25% of their hard-earned income to forgotten customer debts scribbled in paper notebooks (*"Customer Debt Ledger"*) and lack clear visibility into their real weekly profit.
 
 **Biashara Score** changes this. A duka owner simply uploads their Safaricom M-Pesa statement (CSV) or pastes recent M-Pesa SMS messages into our mobile-first web app. The platform:
 
 1. **Parses & Auto-Categorizes** transactions into Sales, Inventory/Suppliers, Utilities (KPLC), Rent, and Owner Draw using a fast regex engine with Amazon Bedrock (Claude 3 Haiku) as an AI fallback.
-2. **Digitizes the "Kitabu ya Deni"** to track customer debts and automatically reconciles incoming customer repayments.
+2. **Digitizes the "Customer Debt Ledger"** to track customer debts and automatically reconciles incoming customer repayments.
 3. **Calculates the Biashara Score (0–100)**—an objective, transparent creditworthiness score based on real cashflow consistency, sales volume, operating margin, and debt recovery discipline.
 4. **Delivers Weekly Financial Pulses** via **Africa's Talking SMS** (*"You made KSh 14,200 this week, profit KSh 3,100"*).
 5. **Generates a Lender-Ready PDF Report** that the shopkeeper can hand to microfinance loan officers as verified proof of business health.
@@ -166,7 +166,7 @@ To keep the 15-day sprint running smoothly without stepping on each other's toes
 
 - **Phase 1 (Days 1–3):** Foundation, PRD, Data Schemas, Mock Wrappers, Sample Datasets.
 - **Phase 2 (Days 4–7):** CSV/SMS Statement Parser, Rule Categorizer, Bedrock Fallback Interface.
-- **Phase 3 (Days 8–10):** Digital Kitabu (Debt Tracker), Biashara Score Algorithm, Dashboard UI.
+- **Phase 3 (Days 8–10):** Debt Tracker (Debt Tracker), Biashara Score Algorithm, Dashboard UI.
 - **Phase 4 (Days 11–13):** Africa's Talking SMS Dispatcher, Lender PDF Generator, End-to-End Flow.
 - **Phase 5 (Days 14–15):** User Testing with Sample Duka Data, Staging Deployment, Demo Showcase.
 

@@ -142,7 +142,7 @@
    - Resiliently strips whitespaces, hyphens, parentheses, and dots.
 
 2. **`match_repayment_to_debt(tx: Transaction, open_debts: List[DebtRecord]) -> Optional[Tuple[DebtRecord, float]]`**
-   - Inbound transaction reconciliation engine for "Kitabu ya Deni".
+   - Inbound transaction reconciliation engine for "Customer Debt Ledger".
    - Only considers active debts with `balance_remaining > 0` and `status != CLEARED`.
    - Highest confidence: Normalized phone number extraction and matching against `debtor_phone`.
    - Secondary heuristic: Substring and token matching on debtor names combined with repayment intent keywords (`deni`, `debt`, `settled`, `cleared`, `repayment`).
@@ -155,7 +155,7 @@
    - Appends detailed transaction entry to `debt.repayment_history`.
 
 4. **`calculate_debt_metrics(debts: List[DebtRecord]) -> Dict[str, Any]`**
-   - Computes aggregate metrics for the Kitabu ya Deni overview:
+   - Computes aggregate metrics for the Customer Debt Ledger overview:
      - `total_outstanding_amount`: Sum of remaining balances.
      - `total_cleared_amount`: Sum of recovered payments.
      - `recovery_rate_pct`: `(total_cleared / total_owed) * 100` (safely returns 0.0 if zero debts).
@@ -171,7 +171,7 @@
      - Business Identification & Store Details card.
      - Biashara Score badge, tier color styling, and 4-pillar breakdown.
      - Historical weekly cashflow performance table (trailing weeks).
-     - Customer credit & Kitabu ya Deni discipline metrics.
+     - Customer credit & Customer Debt Ledger discipline metrics.
      - Actionable improvement tips for lenders.
      - Loan officer / applicant legal sign-off and underwriting stamps.
    - Dual-engine design: Transparently uses ReportLab if installed; otherwise utilizes high-performance zero-dependency `PurePythonPDFBuilder` so it runs 100% offline out-of-the-box.
@@ -237,7 +237,7 @@
 4. **`POST /statements/sms`**: Quick-entry pasted SMS ingestion supporting single or multi-message blocks with de-duplication and debt matching.
 5. **`GET /transactions`**: Paginated transaction listing with filtering by `category`, `direction`, `start_date`, `end_date`, and `cursor`.
 6. **`GET /summary/weekly`**: Dashboard financial pulse computing gross sales, operating expenses, estimated net profit, profit margin %, and trailing multi-week historical series.
-7. **`POST /debts` & `GET /debts` & `PATCH /debts/{debt_id}`**: Full digital "Kitabu ya Deni" lifecycle: creating credit entries, listing with aggregate debt metrics (`total_outstanding_amount`, `recovery_rate_pct`, `delinquent_count`), and logging repayments.
+7. **`POST /debts` & `GET /debts` & `PATCH /debts/{debt_id}`**: Full digital "Customer Debt Ledger" lifecycle: creating credit entries, listing with aggregate debt metrics (`total_outstanding_amount`, `recovery_rate_pct`, `delinquent_count`), and logging repayments.
 8. **`GET /score` & `POST /score/calculate`**: Real-time 4-pillar Biashara Credit Score (0–100), tier rating (Gold, Silver, Bronze, Needs Improvement), and contextual Kenyan business improvement tips.
 9. **`GET /reports/lender-pdf`**: Downloads single-page A4 lender verification PDF report.
 10. **`POST /notifications/weekly-sms`**: Generates weekly digest message and dispatches via Africa's Talking SMS API (mock stdout in offline mode).

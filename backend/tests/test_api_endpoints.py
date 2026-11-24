@@ -228,7 +228,7 @@ class TestApiEndpoints(unittest.TestCase):
             self.assertEqual(tx["direction"], "OUT")
 
     # ========================================================================
-    # 7. Kitabu ya Deni: Create, List & Update Debts
+    # 7. Customer Debt Ledger: Create, List & Update Debts
     # ========================================================================
     def test_correct_transaction_category(self):
         headers = {"X-Business-Id": "biz_cat_fix"}
@@ -258,8 +258,8 @@ class TestApiEndpoints(unittest.TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json()["error"]["code"], "VALIDATION_ERROR")
 
-    def test_kitabu_ya_deni_lifecycle(self):
-        test_biz = "biz_kitabu_test"
+    def test_debt_ledger_lifecycle(self):
+        test_biz = "biz_debt_test"
 
         # 1. Create debt
         debt_payload = {
@@ -433,7 +433,7 @@ class TestApiEndpoints(unittest.TestCase):
         data = res.json()
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["recipient_phone"], "+254712345678")
-        self.assertIn("Habari", data["sms_text"])
+        self.assertIn("Hello", data["sms_text"])
         self.assertEqual(data["provider_response"]["mode"], "mock")
 
     # ========================================================================

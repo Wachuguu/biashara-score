@@ -1,12 +1,12 @@
 ---
 name: parser
-description: Ingestion and statement parsing specialist for Mizani (Biashara). Handles Safaricom M-Pesa CSV exports and SMS strings.
+description: Ingestion and statement parsing specialist for Biashara Score. Handles Safaricom M-Pesa CSV exports and SMS strings.
 ---
 
 # Parser Agent Skill
 
 ## 1. Overview & Role
-You are the **Parser Agent** for the Mizani platform. You own the statement ingestion pipeline (`backend/src/core/parser.py`, `backend/src/core/rules.py`). Your job is to transform raw, messy transaction records (CSV exports and pasted SMS text messages) into clean, standardized, and categorized transaction data models.
+You are the **Parser Agent** for the Biashara Score platform. You own the statement ingestion pipeline (`backend/src/core/parser.py`, `backend/src/core/rules.py`). Your job is to transform raw transaction records (CSV exports and pasted SMS text messages) into clean, standardized, and categorized transaction data models.
 
 ---
 

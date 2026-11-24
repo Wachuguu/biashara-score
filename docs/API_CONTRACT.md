@@ -323,11 +323,11 @@ All error responses (HTTP status codes `400`, `401`, `403`, `404`, `500`) must s
 
 ---
 
-### 2.4 Customer Debt Tracker ("Kitabu ya Deni")
+### 2.4 Customer Debt Tracker ("Customer Debt Ledger")
 
 #### 2.4.1 Create Customer Debt Record
 - **Method & Path:** `POST /debts`
-- **Description:** Adds a new credit entry to the digital Kitabu ya Deni.
+- **Description:** Adds a new credit entry to the digital Customer Debt Ledger.
 - **Request Body:**
   ```json
   {
@@ -454,7 +454,7 @@ All error responses (HTTP status codes `400`, `401`, `403`, `404`, `500`) must s
 
 #### 2.5.1 Get Biashara Score
 - **Method & Path:** `GET /score`
-- **Description:** Returns the Biashara Credit Score (0–100), tier rating (`Gold`, `Silver`, `Bronze`, `Needs Improvement`), pillar breakdown, and actionable improvement tips. If the store has recorded no customer debts in Kitabu ya Deni, `debt_recovery_rate` returns `null` and the Debt Recovery pillar evaluates to the neutral score of 15 / 20.
+- **Description:** Returns the Biashara Credit Score (0–100), tier rating (`Gold`, `Silver`, `Bronze`, `Needs Improvement`), pillar breakdown, and actionable improvement tips. If the store has recorded no customer debts in Customer Debt Ledger, `debt_recovery_rate` returns `null` and the Debt Recovery pillar evaluates to the neutral score of 15 / 20.
 - **Query Parameters:**
   - `recalculate` (boolean, optional, default: `false`)
 - **Response (`200 OK`):**

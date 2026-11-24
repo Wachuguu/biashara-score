@@ -8,7 +8,7 @@ Author: [Author Name / Role]. Status: draft.
 [Describe the expected behavior, outputs, API changes, or user interfaces once resolved.]
 
 ## Affected users and systems
-[e.g., Duka Owner, M-Pesa Parser, Kitabu ya Deni Reconciler, Scoring Engine, Next.js UI, AWS SAM]
+[e.g., Shop Owner, M-Pesa Parser, Debt Reconciler, Scoring Engine, Next.js UI, AWS SAM]
 
 ## Constraints
 - Zero-AWS imports in `backend/src/core/`.

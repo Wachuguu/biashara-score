@@ -100,7 +100,7 @@ class DatabaseClient:
         return item
 
     # -------------------------------------------------------------------------
-    # Debts ("Kitabu ya Deni")
+    # Debts (Customer Debt Ledger)
     # -------------------------------------------------------------------------
     def put_debt(self, debt_dict: Dict[str, Any]) -> None:
         if self.mock:
