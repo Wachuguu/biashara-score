@@ -41,9 +41,9 @@ Resources:
     Properties:
       UserPoolName: !Sub 'biashara-users-${Environment}'
       UsernameAttributes:
-        - phone_number
+        - email
       AutoVerifiedAttributes:
-        - phone_number
+        - email
       Policies:
         PasswordPolicy:
           MinimumLength: 8
