@@ -13,8 +13,8 @@ DEFAULT_TEST_BUSINESS_ID = "biz_7a8b9c0d1e2f"
 
 DEFAULT_TEST_BUSINESS = {
     "business_id": DEFAULT_TEST_BUSINESS_ID,
-    "shop_name": "Mary's Family Provisions",
-    "owner_name": "Mary Wambui",
+    "shop_name": "Geomin Routers",
+    "owner_name": "John Doe",
     "owner_phone": "+254712345678",
     "till_number": "789123",
     "created_at": "2026-09-01T08:00:00Z"
@@ -170,14 +170,7 @@ class DatabaseClient:
     def clear_mock_store(self) -> None:
         """Resets the mock storage, re-populating default test business."""
         _LOCAL_STORE["businesses"] = {
-            DEFAULT_TEST_BUSINESS_ID: {
-                "business_id": DEFAULT_TEST_BUSINESS_ID,
-                "shop_name": "Mary's Family Provisions",
-                "owner_name": "Mary Wambui",
-                "owner_phone": "+254712345678",
-                "till_number": "789123",
-                "created_at": "2026-09-01T08:00:00Z"
-            }
+            DEFAULT_TEST_BUSINESS_ID: dict(DEFAULT_TEST_BUSINESS)
         }
         _LOCAL_STORE["transactions"] = {}
         _LOCAL_STORE["debts"] = {}

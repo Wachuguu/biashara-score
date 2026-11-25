@@ -202,8 +202,8 @@ def execute_lender_pdf(business_id: str, query_params: Dict[str, Any]) -> Dict[s
 
     business_profile = db_client.get_business(business_id) or {
         "business_id": business_id,
-        "shop_name": "Mama Mary Wholesale & Retail",
-        "owner_name": "Mary Wambui",
+        "shop_name": "Geomin Routers",
+        "owner_name": "John Doe",
         "owner_phone": "+254712345678",
         "till_number": "789123"
     }

@@ -543,6 +543,35 @@ async def load_sample_statement(
     return execute_load_sample_statement(biz_id)
 
 
+# ============================================================================
+# 2.8 Model Context Protocol (MCP) & Copilot Endpoints
+# ============================================================================
+@app.post("/mcp", tags=["MCP"])
+async def mcp_jsonrpc(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """JSON-RPC 2.0 Model Context Protocol endpoint (initialize, tools/list, tools/call)."""
+    from src.handlers.mcp_handler import handle_mcp_jsonrpc
+    biz_id = _get_tenant_business_id(authorization, x_business_id)
+    body = await request.json() if (await request.body()) else {}
+    return handle_mcp_jsonrpc(body, default_business_id=biz_id)
+
+
+@app.post("/mcp/copilot", tags=["MCP"])
+async def mcp_copilot(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Interactive AI Underwriting & Shopkeeper Copilot powered by live MCP tools."""
+    from src.handlers.mcp_handler import execute_mcp_copilot
+    biz_id = _get_tenant_business_id(authorization, x_business_id)
+    body = await request.json() if (await request.body()) else {}
+    return execute_mcp_copilot(biz_id, str(body.get("query", "")))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("local_server:app", host="0.0.0.0", port=8000, reload=True)

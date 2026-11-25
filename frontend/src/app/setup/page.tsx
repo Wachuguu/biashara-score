@@ -153,10 +153,10 @@ export default function SetupPage() {
           <p className="mb-4 text-ink-soft">Takes one minute. You can change it later.</p>
           <form noValidate onSubmit={onSubmit} className="space-y-4">
             <Field label="Shop name" error={errors.shop_name}>
-              <input className="field" value={form.shop_name} onChange={set("shop_name")} placeholder="Mama Mary Provisions" autoComplete="organization" maxLength={80} />
+              <input className="field" value={form.shop_name} onChange={set("shop_name")} placeholder="Geomin Routers" autoComplete="organization" maxLength={80} />
             </Field>
             <Field label="Your name" error={errors.owner_name}>
-              <input className="field" value={form.owner_name} onChange={set("owner_name")} placeholder="Mary Wambui" autoComplete="name" maxLength={80} />
+              <input className="field" value={form.owner_name} onChange={set("owner_name")} placeholder="John Doe" autoComplete="name" maxLength={80} />
             </Field>
             <Field label="Phone (for weekly SMS)" error={errors.owner_phone}>
               <input className="field num" value={form.owner_phone} onChange={set("owner_phone")} placeholder="0712 345 678" inputMode="tel" autoComplete="tel" maxLength={16} />

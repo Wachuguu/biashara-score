@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { BookOpen, FileText, Store, Upload, type LucideIcon } from "lucide-react";
+import { BookOpen, Bot, FileText, Store, Upload, type LucideIcon } from "lucide-react";
 import { useActiveDuka } from "@/hooks/useActiveDuka";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
@@ -10,6 +10,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/import", label: "Import", icon: Upload },
   { href: "/deni", label: "Debts", icon: BookOpen },
   { href: "/report", label: "Report", icon: FileText },
+  { href: "/mcp", label: "MCP", icon: Bot },
 ];
 
 const OPEN_ROUTES = ["/", "/setup", "/offline"];
@@ -45,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {showChrome && (
         <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-ink bg-card pb-[var(--safe-bottom)]">
-          <ul className="mx-auto grid h-nav max-w-app grid-cols-4">
+          <ul className="mx-auto grid h-nav max-w-app grid-cols-5">
             {NAV.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(href + "/");
               return (

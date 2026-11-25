@@ -156,8 +156,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             if method == "GET":
                 biz = db_client.get_business(business_id) or {
                     "business_id": business_id,
-                    "shop_name": "Mary's Family Provisions",
-                    "owner_name": "Mary Wambui",
+                    "shop_name": "Geomin Routers",
+                    "owner_name": "John Doe",
                     "owner_phone": "+254712345678",
                     "till_number": "789123",
                     "created_at": "2026-09-01T08:00:00Z"
@@ -244,6 +244,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # 6. Notifications Endpoints
         if path == "/notifications/weekly-sms" and method == "POST":
             return _format_response(send_weekly_sms_notification(event, business_id), origin=origin)
+
+        # 7. Model Context Protocol (MCP) & AI Copilot Endpoints
+        if path == "/mcp" and method == "POST":
+            body = parse_body(event)
+            from src.handlers.mcp_handler import handle_mcp_jsonrpc
+            return _format_response({"statusCode": 200, "body": handle_mcp_jsonrpc(body, default_business_id=business_id)}, origin=origin)
+
+        if path == "/mcp/copilot" and method == "POST":
+            body = parse_body(event)
+            from src.handlers.mcp_handler import execute_mcp_copilot
+            return _format_response({"statusCode": 200, "body": execute_mcp_copilot(business_id, str(body.get("query", "")))}, origin=origin)
 
         # 404 Fallback
         return _format_response(_build_error(

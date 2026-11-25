@@ -63,8 +63,8 @@ def execute_weekly_sms_notification(
 
     biz = db_client.get_business(business_id) or {
         "business_id": business_id,
-        "shop_name": "Mary's Family Provisions",
-        "owner_name": "Mary Wambui",
+        "shop_name": "Geomin Routers",
+        "owner_name": "John Doe",
         "owner_phone": "+254712345678"
     }
 

@@ -60,4 +60,17 @@ export const api = {
     request<{ status: string; imported: number; skipped_duplicates: number; debts_auto_matched: number }>("/statements/sample", {
       method: "POST",
     }),
+
+  // Model Context Protocol (MCP) & Copilot
+  mcpCopilot: (query: string) =>
+    request<{
+      query: string;
+      tool_used: string;
+      answer: string;
+      mcp_request: Record<string, unknown>;
+      mcp_response: Record<string, unknown>;
+    }>("/mcp/copilot", {
+      method: "POST",
+      json: { query },
+    }),
 };
