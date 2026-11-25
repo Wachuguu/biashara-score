@@ -170,7 +170,7 @@ export default function ImportPage() {
       <div role="tablist" aria-label="Import method" className="grid grid-cols-3 gap-1 rounded-md border-2 border-ink bg-card p-1">
         {(
           [
-            ["daraja", "Live Daraja API", Zap],
+            ["daraja", "Live M-Pesa", Zap],
             ["csv", "Statement file", FileUp],
             ["sms", "Paste SMS", MessageSquareText],
           ] as const
@@ -197,15 +197,15 @@ export default function ImportPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <span className="flex h-3 w-3 rounded-full bg-leaf animate-pulse" />
-              <p className="font-extrabold text-ink text-base">Safaricom Daraja C2B Live Webhook</p>
+              <p className="font-extrabold text-ink text-base">Automatic M-Pesa Till Sync</p>
             </div>
             <p className="text-sm text-ink-soft">
-              Direct integration with Safaricom M-Pesa. Customer payments at your Till flow automatically into your shop&apos;s ledger with zero manual effort.
+              Connected to M-Pesa. Whenever a customer pays your shop, the sale is recorded and customer debts are cleared automatically.
             </p>
 
             <div className="rounded-md border-2 border-rule bg-paper p-4 space-y-3">
-              <p className="font-bold text-sm text-ink">Simulate a Live M-Pesa Payment</p>
-              <p className="text-xs text-ink-soft">Test what happens when a customer pays at the till right now:</p>
+              <p className="font-bold text-sm text-ink">Test an Incoming M-Pesa Payment</p>
+              <p className="text-xs text-ink-soft">See what happens the moment a customer pays your shop via M-Pesa:</p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -248,20 +248,20 @@ export default function ImportPage() {
                 loading={simBusy}
                 onClick={runSimulate}
               >
-                ⚡ Receive Live M-Pesa Payment
+                Receive M-Pesa Payment
               </Button>
             </div>
           </div>
         ) : mode === "csv" ? (
           <div className="space-y-4">
-            {/* Quick 1-Click Presentation Banner */}
+            {/* Quick 1-Click Sample History Banner */}
             <div className="rounded-md border-2 border-dashed border-cobalt bg-maize/20 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <p className="font-bold text-sm text-ink flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-cobalt" /> Pitch & Demo Mode
+                  <Sparkles className="h-4 w-4 text-cobalt" /> Try with Sample Shop Data
                 </p>
                 <p className="text-xs text-ink-soft mt-0.5">
-                  Preload 150 verified shop transactions with sales, utilities, and suppliers.
+                  Load 3 months of sample sales, stock purchases, and bills to explore the app right away.
                 </p>
               </div>
               <Button
@@ -272,7 +272,7 @@ export default function ImportPage() {
                 onClick={loadSample}
                 className="shrink-0"
               >
-                Load 150 Transactions
+                Load Sample History
               </Button>
             </div>
 
