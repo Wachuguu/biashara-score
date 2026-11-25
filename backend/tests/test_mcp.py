@@ -75,6 +75,13 @@ class TestMcpIntegration(unittest.TestCase):
         self.assertEqual(res_loan.status_code, 200)
         self.assertEqual(res_loan.json()["tool_used"], "evaluate_loan_readiness")
 
+    def test_mcp_copilot_handles_lowercase_names_and_typos(self):
+        res = execute_mcp_copilot(self.biz_id, "add debt fot mwangi 0729809412 amount 34000")
+        self.assertEqual(res["tool_used"], "record_customer_debt")
+        self.assertIn("Mwangi", res["answer"])
+        self.assertIn("34,000", res["answer"])
+        self.assertNotIn("Jane Wanjiku", res["answer"])
+
 
 if __name__ == "__main__":
     unittest.main()
