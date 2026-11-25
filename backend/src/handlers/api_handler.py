@@ -144,6 +144,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             from src.handlers.daraja_handler import execute_c2b_confirmation
             return _format_response({"statusCode": 200, "body": execute_c2b_confirmation(body)}, origin=origin)
 
+        # 1c. Public Authentication Routes (Register & Login with PBKDF2 password hashing)
+        if path == "/auth/register" and method == "POST":
+            body = parse_body(event)
+            from src.handlers.auth_handler import execute_register
+            return _format_response(execute_register(body), origin=origin)
+
+        if path == "/auth/login" and method == "POST":
+            body = parse_body(event)
+            from src.handlers.auth_handler import execute_login
+            return _format_response(execute_login(body), origin=origin)
+
         # Multi-tenant business ID resolution:
         # - When MOCK_AWS=false: Strictly rejects X-Business-Id (403), extracts sub from authorizer (or 401)
         # - When MOCK_AWS=true: Accepts X-Business-Id or default test business
@@ -162,7 +173,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     "till_number": "789123",
                     "created_at": "2026-09-01T08:00:00Z"
                 }
-                return _format_response({"statusCode": 200, "body": biz}, origin=origin)
+                return _format_response({"statusCode": 200, "body": {k: v for k, v in biz.items() if k != "password_hash"}}, origin=origin)
 
             elif method == "PUT":
                 raw_body = event.get("body", "")
@@ -194,7 +205,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     biz["till_number"] = str(body["till_number"]).strip()
 
                 db_client.put_business(biz)
-                return _format_response({"statusCode": 200, "body": biz}, origin=origin)
+                return _format_response({"statusCode": 200, "body": {k: v for k, v in biz.items() if k != "password_hash"}}, origin=origin)
 
         # 3. Statement & Transaction Endpoints
         if path == "/statements/upload" and method == "POST":

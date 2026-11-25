@@ -22,6 +22,11 @@ export const api = {
   putBusiness: (input: BusinessInput, businessId?: string) =>
     request<Business>("/business", { method: "PUT", json: input, businessId }),
 
+  registerAccount: (input: BusinessInput & { password: string }) =>
+    request<{ token: string; business: Business }>("/auth/register", { method: "POST", json: input }),
+  loginAccount: (input: { owner_phone: string; password: string }) =>
+    request<{ token: string; business: Business }>("/auth/login", { method: "POST", json: input }),
+
   uploadStatement: (file: File) => {
     const form = new FormData();
     form.append("file", file, file.name);

@@ -15,7 +15,14 @@ export class ApiError extends Error {
 }
 
 /** Codes whose backend message is already plain enough to show a shopkeeper. */
-const SHOW_SERVER_MESSAGE = new Set(["VALIDATION_ERROR", "INVALID_STATEMENT_FORMAT", "PAYLOAD_TOO_LARGE", "RESOURCE_NOT_FOUND"]);
+const SHOW_SERVER_MESSAGE = new Set([
+  "VALIDATION_ERROR",
+  "INVALID_STATEMENT_FORMAT",
+  "PAYLOAD_TOO_LARGE",
+  "RESOURCE_NOT_FOUND",
+  "INVALID_CREDENTIALS",
+  "ACCOUNT_EXISTS",
+]);
 
 function friendly(status: number, code: string, serverMsg?: string): string {
   if (serverMsg && SHOW_SERVER_MESSAGE.has(code)) return serverMsg;
