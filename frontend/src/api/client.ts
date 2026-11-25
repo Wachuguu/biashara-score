@@ -19,7 +19,7 @@ const SHOW_SERVER_MESSAGE = new Set(["VALIDATION_ERROR", "INVALID_STATEMENT_FORM
 
 function friendly(status: number, code: string, serverMsg?: string): string {
   if (serverMsg && SHOW_SERVER_MESSAGE.has(code)) return serverMsg;
-  if (status === 401 || status === 403) return "You are not signed in to this duka. Choose your duka again.";
+  if (status === 401 || status === 403) return "You are not signed in to this shop. Choose your shop again.";
   if (status === 404) return "We could not find that record.";
   if (status >= 500) return "The server had a problem. Try again in a moment.";
   return serverMsg || "Something went wrong. Try again.";

@@ -38,7 +38,7 @@ export default function DashboardPage() {
     return (
       <div className="mt-4">
         <ErrorState
-          message={score.error ?? "Could not load your duka."}
+          message={score.error ?? "Could not load your shop."}
           onRetry={() => {
             score.reload();
             weekly.reload();

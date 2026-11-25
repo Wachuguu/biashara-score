@@ -18,8 +18,8 @@ const INCLUDED = [
 ];
 
 function fileName(shop?: string) {
-  const safe = (shop || "Duka").replace(/[^\w]+/g, "_").replace(/^_|_$/g, "");
-  return `Biashara_Score_Report_${safe || "Duka"}.pdf`;
+  const safe = (shop || "Shop").replace(/[^\w]+/g, "_").replace(/^_|_$/g, "");
+  return `Biashara_Score_Report_${safe || "Shop"}.pdf`;
 }
 
 export default function ReportPage() {
@@ -73,7 +73,7 @@ export default function ReportPage() {
             <FileText aria-hidden className="h-6 w-6" />
           </span>
           <div>
-            <p className="font-bold">{profile?.shop_name ?? "Your duka"}</p>
+            <p className="font-bold">{profile?.shop_name ?? "Your shop"}</p>
             <p className="text-sm text-ink-soft">Built from your M-Pesa records. A4, one page.</p>
           </div>
         </div>

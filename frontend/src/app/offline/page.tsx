@@ -9,7 +9,7 @@ export default function OfflinePage() {
       <EmptyState
         icon={WifiOff}
         title="No connection"
-        body="Biashara Score needs data to load your duka. Check your bundles or Wi-Fi."
+        body="Biashara Score needs data to load your shop. Check your bundles or Wi-Fi."
         action={<Button onClick={() => window.location.reload()}>Try again</Button>}
       />
     </div>

@@ -72,7 +72,7 @@ export default function SetupPage() {
       );
       saveProfile({ business_id: biz.business_id, shop_name: biz.shop_name, owner_name: biz.owner_name });
       setActiveId(biz.business_id);
-      toast("Duka saved");
+      toast("Shop saved");
       router.push("/import");
     } catch (err) {
       setServerError(errorMessage(err));
@@ -110,9 +110,9 @@ export default function SetupPage() {
       </div>
 
       {profiles.length > 0 && (
-        <section aria-labelledby="your-dukas">
-          <h2 id="your-dukas" className="mb-3 text-2xl">
-            Your dukas
+        <section aria-labelledby="your-shops">
+          <h2 id="your-shops" className="mb-3 text-2xl">
+            Your shops
           </h2>
           <ul className="space-y-2">
             {profiles.map((p, i) => {
@@ -137,7 +137,7 @@ export default function SetupPage() {
           </ul>
           {!showForm && (
             <Button variant="secondary" block className="mt-3" onClick={() => setShowForm(true)}>
-              Add another duka
+              Add another shop
             </Button>
           )}
         </section>
@@ -146,9 +146,9 @@ export default function SetupPage() {
       {serverError && <ErrorState message={serverError} />}
 
       {showForm && (
-        <section aria-labelledby="new-duka">
-          <h2 id="new-duka" className="mb-1 text-2xl">
-            New duka
+        <section aria-labelledby="new-shop">
+          <h2 id="new-shop" className="mb-1 text-2xl">
+            New shop
           </h2>
           <p className="mb-4 text-ink-soft">Takes one minute. You can change it later.</p>
           <form noValidate onSubmit={onSubmit} className="space-y-4">
@@ -165,7 +165,7 @@ export default function SetupPage() {
               <input className="field num" value={form.till_number} onChange={set("till_number")} placeholder="789123" inputMode="numeric" maxLength={7} />
             </Field>
             <Button type="submit" size="lg" block loading={saving}>
-              Save duka
+              Save shop
             </Button>
           </form>
         </section>

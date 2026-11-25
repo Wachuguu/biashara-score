@@ -9,5 +9,5 @@ export default function Home() {
   useEffect(() => {
     router.replace(getActiveId() ? "/dashboard" : "/setup");
   }, [router]);
-  return <LoadingBlock label="Opening your duka" />;
+  return <LoadingBlock label="Opening your shop" />;
 }

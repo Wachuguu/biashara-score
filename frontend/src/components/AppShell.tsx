@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="mx-auto flex h-14 max-w-app items-center justify-between gap-3 px-4">
             <span className="truncate font-display text-xl font-extrabold">{profile?.shop_name ?? "Biashara Score"}</span>
             <Link href="/setup" className="inline-flex min-h-tap shrink-0 items-center rounded-md px-2 text-sm font-bold text-cobalt underline-offset-4 hover:underline">
-              Change duka
+              Change shop
             </Link>
           </div>
         </header>
