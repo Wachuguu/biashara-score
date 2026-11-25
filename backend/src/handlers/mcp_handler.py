@@ -234,20 +234,41 @@ def execute_mcp_copilot(business_id: str, query: str) -> Dict[str, Any]:
         tool_args: Dict[str, Any] = {"business_id": business_id, "requested_amount_kes": amt}
 
     elif any(k in q_low for k in ["add debt", "log debt", "record debt", "owes"]):
-        phone_match = re.search(r"((?:\+?254|0)[17]\d{8})", q.replace(" ", ""))
-        phone = phone_match.group(1) if phone_match else "0712345678"
-        q_no_phone = re.sub(r"(?:\+?254|0)[17][\d\s-]{8,11}", " ", q_low)
-        amt_match = re.search(r"(?:ksh|kes|amount)?\s*(\d[\d,]{1,6})", q_no_phone)
-        amt = float(amt_match.group(1).replace(",", "")) if amt_match else 1500.0
-        name_match = re.search(r"(?:for|debt)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", q)
-        name = name_match.group(1) if name_match else "Jane Wanjiku"
+        # 1. Extract Kenyan phone (or detect an invalid/short phone starting with 0)
+        compact = re.sub(r"[\s-]+", "", q)
+        phone_match = re.search(r"((?:\+?254|0)[17]\d{8})", compact)
+        raw_zero_num = re.search(r"\b(0\d{6,11})\b", q)
+        phone = phone_match.group(1) if phone_match else (raw_zero_num.group(1) if raw_zero_num else "0712345678")
+
+        # 2. Extract amount: prefer explicit keyword ('amount 34000', 'ksh 34000'), else strip phone-like numbers
+        explicit_amt = re.search(r"\b(?:amount|ksh|kes|shillings?|bob)\s*[:=]?\s*(\d[\d,]*(?:\.\d+)?)", q_low)
+        if explicit_amt:
+            amt = float(explicit_amt.group(1).replace(",", ""))
+        else:
+            q_no_phone = re.sub(r"\b(?:\+?254|0)\d[\d\s-]{6,12}", " ", q_low)
+            amt_match = re.search(r"(\d[\d,]{1,6})", q_no_phone)
+            amt = float(amt_match.group(1).replace(",", "")) if amt_match else 1500.0
+
+        # 3. Extract customer name (case-insensitive, tolerates typos like 'fot' -> 'for')
+        name_match = re.search(
+            r"\b(?:add\s+debt|log\s+debt|record\s+debt)\s+(?:for|fot|to|of)?\s*([a-zA-Z]+(?:\s+[a-zA-Z]+)?)",
+            q,
+            re.IGNORECASE,
+        )
+        if not name_match:
+            name_match = re.search(r"\b(?:for|to|debt)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)", q, re.IGNORECASE)
+        raw_name = name_match.group(1).strip() if name_match else "Customer"
+        # Strip trailing amount/phone keywords if accidentally captured
+        raw_name = re.sub(r"\b(?:amount|ksh|kes|owes|debt)\b.*$", "", raw_name, flags=re.IGNORECASE).strip()
+        name = raw_name.title() if raw_name else "Customer"
+
         tool_name = "record_customer_debt"
         tool_args = {
             "business_id": business_id,
             "debtor_name": name,
             "debtor_phone": phone,
             "amount_owed": amt,
-            "items_summary": "Logged via MCP Copilot",
+            "items_summary": "Logged via Nia Assistant",
         }
 
     elif any(k in q_low for k in ["cashflow", "profit", "sales", "weekly", "turnover", "revenue"]):
