@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { BookOpen, Bot, FileText, Store, Upload, type LucideIcon } from "lucide-react";
+import { BookOpen, MessageCircle, FileText, Store, Upload, type LucideIcon } from "lucide-react";
 import { useActiveDuka } from "@/hooks/useActiveDuka";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
@@ -10,7 +10,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/import", label: "Import", icon: Upload },
   { href: "/deni", label: "Debts", icon: BookOpen },
   { href: "/report", label: "Report", icon: FileText },
-  { href: "/mcp", label: "MCP", icon: Bot },
+  { href: "/mcp", label: "Ask Nia", icon: MessageCircle },
 ];
 
 const OPEN_ROUTES = ["/", "/setup", "/offline"];
