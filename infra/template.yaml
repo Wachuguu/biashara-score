@@ -250,8 +250,6 @@ Resources:
             ApiId: !Ref BiasharaHttpApi
             Path: /health
             Method: GET
-            Auth:
-              Authorizer: NONE
         RootRoute:
           Type: HttpApi
           Properties:
