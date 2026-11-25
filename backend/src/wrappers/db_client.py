@@ -158,6 +158,17 @@ class DatabaseClient:
         response = self.biz_table.get_item(Key={"business_id": business_id})
         return response.get("Item")
 
+    def get_business_by_phone(self, owner_phone: str) -> Optional[Dict[str, Any]]:
+        if self.mock:
+            for biz in _LOCAL_STORE["businesses"].values():
+                if biz.get("owner_phone") == owner_phone:
+                    return biz
+            return None
+        from boto3.dynamodb.conditions import Attr
+        response = self.biz_table.scan(FilterExpression=Attr("owner_phone").eq(owner_phone))
+        items = response.get("Items", [])
+        return items[0] if items else None
+
     def put_business(self, business_dict: Dict[str, Any]) -> None:
         if self.mock:
             _LOCAL_STORE["businesses"][business_dict["business_id"]] = dict(business_dict)

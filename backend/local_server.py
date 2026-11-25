@@ -572,6 +572,31 @@ async def mcp_copilot(
     return execute_mcp_copilot(biz_id, str(body.get("query", "")))
 
 
+# ============================================================================
+# 2.9 Authentication (Register & Login with PBKDF2 Hashing)
+# ============================================================================
+@app.post("/auth/register", tags=["Auth"])
+async def auth_register(
+    request: Request,
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Registers a new shop account with salted PBKDF2 password hashing."""
+    from src.handlers.auth_handler import execute_register
+    body = await request.json() if (await request.body()) else {}
+    return _unwrap_result(execute_register(body))
+
+
+@app.post("/auth/login", tags=["Auth"])
+async def auth_login(
+    request: Request,
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Authenticates a shopkeeper by phone number and password."""
+    from src.handlers.auth_handler import execute_login
+    body = await request.json() if (await request.body()) else {}
+    return _unwrap_result(execute_login(body))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("local_server:app", host="0.0.0.0", port=8000, reload=True)
