@@ -1,177 +1,159 @@
-# Biashara Score 🇰🇪
-> **Financial Intelligence & Lender-Ready Credit Scoring for Kenyan Micro-Businesses**
+# Biashara Score
 
-[![Built for Kenyan MSMEs](https://img.shields.io/badge/Market-Kenya%20MSMEs-007A3D.svg)](https://github.com/Wachuguu/biashara-score)
-[![Architecture: AWS Serverless](https://img.shields.io/badge/Cloud-AWS%20Serverless-FF9900.svg)](https://aws.amazon.com)
-[![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB.svg)](https://www.python.org/)
-[![Next.js 14](https://img.shields.io/badge/Next.js-14%20PWA-black.svg)](https://nextjs.org/)
+Financial Intelligence, M-Pesa Cashflow Analytics, and Lender-Ready Credit Scoring for Micro, Small, and Medium Enterprises (MSMEs).
 
----
-
-## 📖 What is Biashara Score?
-
-Over **7.4 million micro and small businesses** in Kenya operate almost entirely on cash and M-Pesa. Because they lack audited books and formal collateral, **traditional banks and SACCOs reject up to 85% of their loan applications**. Additionally, shopkeepers lose 10%–25% of their hard-earned income to forgotten customer debts scribbled in paper notebooks (*"Customer Debt Ledger"*) and lack clear visibility into their real weekly profit.
-
-**Biashara Score** changes this. A duka owner simply uploads their Safaricom M-Pesa statement (CSV) or pastes recent M-Pesa SMS messages into our mobile-first web app. The platform:
-
-1. **Parses & Auto-Categorizes** transactions into Sales, Inventory/Suppliers, Utilities (KPLC), Rent, and Owner Draw using a fast regex engine with Amazon Bedrock (Claude 3 Haiku) as an AI fallback.
-2. **Digitizes the "Customer Debt Ledger"** to track customer debts and automatically reconciles incoming customer repayments.
-3. **Calculates the Biashara Score (0–100)**—an objective, transparent creditworthiness score based on real cashflow consistency, sales volume, operating margin, and debt recovery discipline.
-4. **Delivers Weekly Financial Pulses** via **Africa's Talking SMS** (*"You made KSh 14,200 this week, profit KSh 3,100"*).
-5. **Generates a Lender-Ready PDF Report** that the shopkeeper can hand to microfinance loan officers as verified proof of business health.
+- **Live Web App (AWS Amplify):** `https://main.d3mh28rzoa6peb.amplifyapp.com`
+- **Live API Gateway (`eu-north-1`):** `https://eljw1b70fa.execute-api.eu-north-1.amazonaws.com`
+- **Default Demo Profile:** `Geomin Routers` (Owner: `John Doe`)
 
 ---
 
-## 🏗️ Architecture Overview
+## Overview
 
-Biashara Score runs on a 100% serverless, scale-to-zero AWS architecture:
+Over 7.4 million MSMEs in Kenya operate primarily on M-Pesa and cash. Because they lack audited financial statements and physical collateral, most are rejected for formal bank and SACCO working-capital loans. At the same time, shopkeepers lose 10% to 25% of monthly revenue to untracked customer credit recorded in paper notebooks.
 
-```
-[ Next.js + Tailwind PWA ]
-          |
-     (API Gateway)
-          |
-  [ Python Lambda Functions ]
-   /           |           \
-[DynamoDB]   [S3 Bucket]   [Bedrock AI]
-     \         |           /
-      [EventBridge Cron]
-               |
-     [Africa's Talking SMS]
-```
+**Biashara Score** turns everyday M-Pesa transactions into an objective, explainable **0-100 credit score**, automates customer debt tracking, and provides a one-page lender-ready PDF report.
 
-- **Frontend:** Next.js 14 App Router, Tailwind CSS, Lucide Icons, Mobile PWA.
-- **Backend API:** AWS Lambda (Python 3.11) behind Amazon API Gateway HTTP API.
-- **Storage:** Amazon DynamoDB (3 tables: Businesses, Transactions, Debts) & Amazon S3 (Statements & PDF Reports).
-- **AI Classification:** Amazon Bedrock (Anthropic Claude 3 Haiku).
-- **Authentication:** Amazon Cognito User Pools.
-- **Scheduled Jobs & SMS:** Amazon EventBridge triggers weekly profit summaries dispatched via Africa's Talking SMS API.
-- **Infrastructure as Code:** AWS Serverless Application Model (SAM).
+### Core Capabilities
 
-For deep architectural specifications and DynamoDB schemas, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+1. **Automated M-Pesa Ingestion (Safaricom Daraja + CSV + SMS):**
+   - **Safaricom Daraja C2B Webhooks:** Receives real-time customer payments (`/mpesa/c2b/validation`, `/mpesa/c2b/confirmation`) and includes a live sandbox payment simulator (`/mpesa/simulate`).
+   - **Statement & SMS Importer:** Parses standard M-Pesa CSV statements, pasted SMS messages, and includes a one-click 150-transaction sample loader (`/statements/sample`).
+2. **4-Pillar Credit Scoring Engine (0-100):**
+   - **Cashflow Consistency (30 pts):** Active trading days per week over 4-6 weeks.
+   - **Revenue Volume (25 pts):** 4-week average weekly turnover.
+   - **Operating Margin (25 pts):** Net profit ratio after inventory, utilities, and rent.
+   - **Debt Discipline (20 pts):** Customer credit recovery rate.
+   - **Tiers:** Gold (80+), Silver (65-79), Bronze (50-64), Needs Improvement (<50).
+3. **Digital Customer Debt Ledger:**
+   - Tracks customer credit digitally and automatically reconciles incoming M-Pesa payments against open debts by phone number or name.
+4. **Lender-Ready PDF Report & Weekly SMS Digest:**
+   - Generates a single-page A4 financial report using a zero-dependency pure-Python PDF engine.
+   - Dispatches automated Sunday 8:00 PM EAT profit and score summaries via **Africa's Talking SMS**.
 
 ---
 
-## 🗂️ Project Structure
+## Model Context Protocol (MCP) & AI Integration
 
-```
+Biashara Score exposes a standard **JSON-RPC 2.0 Model Context Protocol (MCP) Server** alongside user-friendly AI features.
+
+### 1. Why MCP Matters Here (B2B Lender & Bank Access)
+External partner banks (such as KCB, Equity, or SACCO underwriting copilots) can connect their AI systems directly to Biashara Score's MCP server to verify a shop's live creditworthiness, cashflow, and loan eligibility without manual paperwork.
+
+- **HTTP MCP Endpoint:** `POST /mcp` (supports `initialize`, `tools/list`, `tools/call` per MCP `2024-11-05`)
+- **Standalone Stdio MCP Server:** `PYTHONPATH=backend python backend/mcp_server.py`
+
+#### Exposed MCP Tools
+
+| Tool Name | Purpose |
+| :--- | :--- |
+| `get_business_score` | Returns the 0-100 Biashara Score, tier, 4-pillar breakdown, and coaching tips. |
+| `get_weekly_cashflow` | Returns multi-week gross sales, operating expenses, and net profit in KSh. |
+| `get_debt_ledger` | Returns outstanding customer debts, cleared amounts, and recovery rate. |
+| `record_customer_debt` | Logs a new customer credit entry directly into the Customer Debt Ledger. |
+| `evaluate_loan_readiness` | Underwriting tool that evaluates loan eligibility, risk level, and safe 30-day working-capital limit for a requested KSh amount. |
+
+### 2. Nia: Conversational Shop Assistant (User Abstraction)
+End users do not interact with raw JSON-RPC. In the web app, the **Ask Nia** tab (`/mcp`, powered by `POST /mcp/copilot`) provides a clean chatbot interface where shopkeepers ask plain-English questions such as:
+- *"Can I qualify for a KSh 50,000 loan?"*
+- *"How much profit did I make this week?"*
+- *"Who owes me money right now?"*
+- *"Add debt for Jane Wanjiku 0722112233 amount 2500"*
+
+Nia invokes the underlying MCP tools and replies in plain language, while keeping the raw JSON-RPC protocol trace tucked behind an optional **"For Banks & Developers: View Live MCP Query"** toggle.
+
+### 3. AI Classification Fallback (Amazon Bedrock)
+- **Model:** **Anthropic Claude 3 Haiku** (`anthropic.claude-3-haiku-20240307-v1:0`) via **Amazon Bedrock**.
+- **How it works:** Known Kenyan merchants (`Bidco Africa`, `Kapa Oil`, `Unga Farm Care`, `KPLC`, `Nairobi Water`) are matched in under 1ms using deterministic regex rules. Ambiguous transaction descriptions fall back to Claude 3 Haiku for classification.
+- The 0-100 credit score itself remains 100% deterministic math so lending decisions are transparent and auditable.
+
+---
+
+## AWS Services Used
+
+Biashara Score runs on a serverless, scale-to-zero AWS architecture in `eu-north-1`:
+
+| AWS Service | Role |
+| :--- | :--- |
+| **AWS Amplify Hosting** | Builds and hosts the Next.js 14 frontend PWA directly from GitHub (`frontend/`). |
+| **Amazon CloudFront** | Global CDN serving the frontend over HTTPS. |
+| **Amazon API Gateway (HTTP API v2)** | Routes REST, Daraja C2B webhooks, and MCP JSON-RPC endpoints with CORS rules. |
+| **AWS Lambda (Python 3.11)** | Runs `ApiFunction` (REST, Daraja, MCP, PDF generation) and `WeeklyCronFunction` (weekly digest). |
+| **Amazon DynamoDB** | On-Demand (`PAY_PER_REQUEST`) NoSQL tables: `BusinessesTable`, `TransactionsTable`, `DebtsTable`. |
+| **Amazon S3** | Archives uploaded M-Pesa CSV statements and SAM deployment artifacts. |
+| **Amazon EventBridge** | Scheduled cron (`cron(0 17 ? * SUN *)`) triggering the Sunday 8:00 PM EAT SMS digest. |
+| **Amazon Cognito** | Provisioned User Pool and App Client for production JWT authentication. |
+| **Amazon Bedrock** | Hosts Claude 3 Haiku (`bedrock:InvokeModel`) for transaction categorization fallback. |
+| **AWS CloudFormation / SAM** | Infrastructure-as-Code (`infra/template.yaml`) managing all backend resources. |
+
+---
+
+## External Integrations
+
+- **Safaricom Daraja API:** M-Pesa C2B Validation/Confirmation webhooks and sandbox simulation (`backend/src/wrappers/daraja_client.py`, `backend/src/handlers/daraja_handler.py`).
+- **Africa's Talking API:** Weekly SMS financial summary dispatch (`backend/src/wrappers/sms_client.py`, `backend/src/handlers/cron_handler.py`).
+
+---
+
+## Project Structure
+
+```text
 biashara-score/
-├── .env.example              # Template for environment configuration
-├── .gitignore                # Comprehensive ignore file (never commit AWS keys!)
-├── README.md                 # Project overview and quickstart guide
+├── README.md
+├── Makefile                     # Unified test commands (make test-backend, make test-frontend)
 ├── sample-data/
-│   └── mpesa_statement.csv  # 150 realistic fake transactions for a Nairobi duka
-├── docs/
-│   ├── PRD.md               # Product Requirements Document & MVP scope
-│   ├── ARCHITECTURE.md      # AWS Architecture & DynamoDB data models
-│   └── TEAM_WORKFLOW.md     # 4-person Git branching & local dev workflow
-├── frontend/                # Next.js 14 + Tailwind CSS web application
-├── backend/                 # Python Lambda backend & pure business logic
-│   ├── src/
-│   │   ├── core/            # 100% pure Python logic (parser, categorizer, score)
-│   │   ├── wrappers/        # Thin mockable adapters for AWS services
-│   │   └── handlers/        # AWS Lambda entry points
-│   └── tests/               # Pytest suite (runs 100% offline with zero AWS creds)
-└── infra/                   # AWS SAM infrastructure templates (template.yaml)
+│   └── mpesa_statement.csv      # 150-transaction sample M-Pesa statement
+├── docs/                        # PRD, architecture, API contract, and workflow specs
+├── frontend/                    # Next.js 14 + Tailwind CSS web application (Amplify root)
+│   └── src/app/
+│       ├── setup/               # Shop profile creation & demo shop loader
+│       ├── dashboard/           # Biashara Score gauge & weekly cashflow summary
+│       ├── import/              # Live Daraja simulator, CSV upload, SMS paste, 150-tx loader
+│       ├── deni/                # Digital Customer Debt Ledger
+│       ├── report/              # 1-page Lender-Ready A4 PDF download
+│       └── mcp/                 # "Ask Nia" conversational assistant & MCP protocol trace
+├── backend/                     # Python 3.11 Lambda backend & core engines
+│   ├── local_server.py          # FastAPI local development server (mirrors API Gateway)
+│   ├── mcp_server.py            # Standalone stdio MCP JSON-RPC 2.0 server
+│   ├── src/core/                # Pure Python engines (parser, categorizer, scorer, debt, PDF)
+│   ├── src/wrappers/            # AWS, Daraja, Bedrock, and Africa's Talking clients
+│   ├── src/handlers/            # Lambda, Daraja, and MCP handlers
+│   └── tests/                   # 76 unit, integration, security, Daraja, and MCP tests
+└── infra/
+    └── template.yaml            # AWS SAM / CloudFormation template
 ```
 
 ---
 
-## 🚦 Implementation Status
+## Local Development & Verification
 
-| Component | Status | Details |
-| :--- | :--- | :--- |
-| **Backend Core Engine** (`backend/src/core/`) | ✅ **Working** | Pure Python: M-Pesa CSV/SMS parser, rule categorizer, 4-pillar credit scoring, weekly financial pulse, customer debt tracker, ReportLab PDF generator. Zero AWS dependencies. |
-| **Backend REST API** (`backend/local_server.py`) | ✅ **Working** | FastAPI server with CORS for local development on `http://localhost:8000`. Full OpenAPI docs at `/docs`. |
-| **AWS Lambda Handlers** (`backend/src/handlers/`) | ✅ **Working** | Handlers for API Gateway HTTP API v2 & EventBridge weekly digest cron job. |
-| **AWS Infrastructure Template** (`infra/template.yaml`) | ✅ **Working** | CloudFormation SAM template with least-privilege IAM policies, DynamoDB, S3, Cognito. |
-| **Frontend PWA** (`frontend/`) | ⏳ **Not built yet** | Next.js 14 mobile-first web app is currently pending frontend sprint. |
-| **Live AWS Cloud Deployment** | ⏳ **Not built yet** | Production deployment to AWS shared account is scheduled for Phase 5 staging. |
-
-> **IMPORTANT:** Our team shares **one AWS account that only ONE person deploys to**. 
-> If you are working on features, **you do not need AWS credentials!** All parser, categorizer, debt tracking, and score logic can be executed and unit-tested locally using mock adapters and the sample CSV data.
-
-### 1. Prerequisites
-- Git
+### Prerequisites
 - Python 3.11+
-- Node.js 18+ & npm
+- Node.js 18+ and npm
 
-### 2. Quickstart Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/Wachuguu/biashara-score.git
-cd biashara-score
-
-# Copy the example environment file
-cp .env.example .env
-```
-
-Notice that `.env` has `MOCK_AWS=true` enabled by default. This tells the backend wrappers to run completely in offline mode!
-
-### 3. Running Backend Tests (Offline)
+### Run All Tests
 
 ```bash
-# Create and activate Python virtual environment
-python3 -m venv venv
-source venv/bin/activate
+# Backend unit, integration, security, Daraja, and MCP tests (76 tests)
+make test-backend
 
-# Install testing dependencies
-pip install pytest
-
-# Run the test suite against sample-data/mpesa_statement.csv
-pytest backend/tests -v
+# Frontend TypeScript typecheck and ESLint
+make test-frontend
 ```
 
-### 4. Running the Local API Server
+### Run Locally
 
 ```bash
-# Start the local FastAPI server with CORS enabled
-python backend/local_server.py
+# Terminal 1: Start local FastAPI backend (http://localhost:8000)
+PYTHONPATH=backend ./venv/bin/uvicorn local_server:app --reload --port 8000
+
+# Terminal 2: Start Next.js frontend (http://localhost:3000)
+cd frontend && npm run dev
 ```
-Open [http://localhost:8000/docs](http://localhost:8000/docs) in your browser to interactively test all endpoints with Swagger UI.
 
-### 5. Frontend Web App (Not built yet)
-
-> [!NOTE]
-> The Next.js 14 frontend web application (`frontend/`) is **Not built yet**. The backend API is fully implemented and tested with CORS support for `http://localhost:3000` ready for when the frontend workstream begins.
+### Deploy Backend to AWS (SAM)
 
 ```bash
-# Once frontend is scaffolded:
-cd frontend
-npm install
-npm run dev
+cd infra
+sam build && sam deploy
 ```
-
----
-
-## 👥 How Teammates Fork, Branch, and Run It
-
-To keep the 15-day sprint running smoothly without stepping on each other's toes:
-
-1. **Fork or Clone:** Follow [docs/TEAM_WORKFLOW.md](docs/TEAM_WORKFLOW.md).
-2. **Branch Off `main`:**
-   ```bash
-   git checkout main
-   git pull origin main
-   git checkout -b feat/your-feature-name
-   ```
-3. **Test Locally:** Ensure all unit tests pass with `MOCK_AWS=true`.
-4. **Submit a Pull Request:** Open a PR against `main`. Require at least 1 teammate approval before merging.
-5. **Deployment:** The DevOps Lead (Dev 4) pulls `main` and deploys to AWS via `sam build && sam deploy`.
-
----
-
-## 📅 15-Day Sprint Roadmap
-
-- **Phase 1 (Days 1–3):** Foundation, PRD, Data Schemas, Mock Wrappers, Sample Datasets.
-- **Phase 2 (Days 4–7):** CSV/SMS Statement Parser, Rule Categorizer, Bedrock Fallback Interface.
-- **Phase 3 (Days 8–10):** Debt Tracker (Debt Tracker), Biashara Score Algorithm, Dashboard UI.
-- **Phase 4 (Days 11–13):** Africa's Talking SMS Dispatcher, Lender PDF Generator, End-to-End Flow.
-- **Phase 5 (Days 14–15):** User Testing with Sample Duka Data, Staging Deployment, Demo Showcase.
-
----
-
-## 📜 License & Acknowledgements
-Built with ❤️ in Nairobi, Kenya for local MSMEs and Dukas.
-Special thanks to Safaricom M-Pesa open format references and Africa's Talking developer community.
