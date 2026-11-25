@@ -14,7 +14,8 @@ from src.handlers.utils import (
     resolve_business_id,
     get_cors_headers,
     make_error_response,
-    is_mock_mode
+    is_mock_mode,
+    parse_body
 )
 from src.handlers.statement_handler import upload_statement, ingest_sms, list_transactions
 from src.handlers.debt_handler import create_debt, list_debts, update_debt
@@ -132,6 +133,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             }, origin=origin)
 
+        # 1b. Safaricom Daraja Public Webhooks (C2B Validation & Confirmation)
+        if path == "/mpesa/c2b/validation" and method == "POST":
+            body = parse_body(event)
+            from src.handlers.daraja_handler import execute_c2b_validation
+            return _format_response({"statusCode": 200, "body": execute_c2b_validation(body)}, origin=origin)
+
+        if path == "/mpesa/c2b/confirmation" and method == "POST":
+            body = parse_body(event)
+            from src.handlers.daraja_handler import execute_c2b_confirmation
+            return _format_response({"statusCode": 200, "body": execute_c2b_confirmation(body)}, origin=origin)
+
         # Multi-tenant business ID resolution:
         # - When MOCK_AWS=false: Strictly rejects X-Business-Id (403), extracts sub from authorizer (or 401)
         # - When MOCK_AWS=true: Accepts X-Business-Id or default test business
@@ -190,6 +202,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
         if path == "/statements/sms" and method == "POST":
             return _format_response(ingest_sms(event, business_id), origin=origin)
+
+        if path == "/statements/sample" and method == "POST":
+            from src.handlers.daraja_handler import execute_load_sample_statement
+            return _format_response({"statusCode": 200, "body": execute_load_sample_statement(business_id)}, origin=origin)
+
+        if path == "/mpesa/simulate" and method == "POST":
+            body = parse_body(event)
+            from src.handlers.daraja_handler import execute_simulate_payment
+            return _format_response({"statusCode": 200, "body": execute_simulate_payment(business_id, body)}, origin=origin)
 
         if path == "/transactions" and method == "GET":
             return _format_response(list_transactions(event, business_id), origin=origin)

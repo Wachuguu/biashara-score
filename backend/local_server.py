@@ -494,6 +494,55 @@ async def send_weekly_sms(
     return _unwrap_result(res)
 
 
+# ============================================================================
+# 2.7 Safaricom Daraja M-Pesa & Demo Endpoints
+# ============================================================================
+@app.post("/mpesa/c2b/validation", tags=["Daraja"])
+async def mpesa_validation(
+    request: Request,
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Safaricom C2B Validation Webhook."""
+    from src.handlers.daraja_handler import execute_c2b_validation
+    body = await request.json() if (await request.body()) else {}
+    return execute_c2b_validation(body)
+
+
+@app.post("/mpesa/c2b/confirmation", tags=["Daraja"])
+async def mpesa_confirmation(
+    request: Request,
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Safaricom C2B Confirmation Webhook."""
+    from src.handlers.daraja_handler import execute_c2b_confirmation
+    body = await request.json() if (await request.body()) else {}
+    return execute_c2b_confirmation(body, target_business_id=x_business_id)
+
+
+@app.post("/mpesa/simulate", tags=["Daraja"])
+async def mpesa_simulate(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Simulates real-time customer M-Pesa payment arriving at Till."""
+    from src.handlers.daraja_handler import execute_simulate_payment
+    biz_id = _get_tenant_business_id(authorization, x_business_id)
+    body = await request.json() if (await request.body()) else {}
+    return execute_simulate_payment(biz_id, body)
+
+
+@app.post("/statements/sample", tags=["Statements"])
+async def load_sample_statement(
+    authorization: Optional[str] = Header(None),
+    x_business_id: Optional[str] = Header(None, alias="X-Business-Id")
+):
+    """Loads 150-transaction verified sample M-Pesa statement in 1 click."""
+    from src.handlers.daraja_handler import execute_load_sample_statement
+    biz_id = _get_tenant_business_id(authorization, x_business_id)
+    return execute_load_sample_statement(biz_id)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("local_server:app", host="0.0.0.0", port=8000, reload=True)

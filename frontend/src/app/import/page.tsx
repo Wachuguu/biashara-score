@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, m } from "motion/react";
-import { FileUp, MessageSquareText, ReceiptText } from "lucide-react";
+import { FileUp, MessageSquareText, ReceiptText, Zap, Sparkles } from "lucide-react";
 import { api } from "@/api/endpoints";
 import { errorMessage } from "@/api/client";
 import { CATEGORIES, type Category, type Transaction } from "@/api/types";
@@ -20,7 +20,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const PAGE = 50;
 const MAX_LIMIT = 200; // backend max; cursor is not honoured server-side yet
 
-type Mode = "csv" | "sms";
+type Mode = "csv" | "sms" | "daraja";
 interface ImportSummary {
   imported: number;
   skipped: number;
@@ -30,12 +30,17 @@ interface ImportSummary {
 
 export default function ImportPage() {
   const toast = useToast();
-  const { id } = useActiveDuka();
+  const { id, profile } = useActiveDuka();
   const [mode, setMode] = useState<Mode>("csv");
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [sms, setSms] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sampleLoading, setSampleLoading] = useState(false);
+  const [simAmount, setSimAmount] = useState("1500");
+  const [simName, setSimName] = useState("Peter Kamau");
+  const [simPhone, setSimPhone] = useState("+254722998877");
+  const [simBusy, setSimBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [filter, setFilter] = useState<Category | null>(null);
@@ -88,6 +93,52 @@ export default function ImportPage() {
     }
   }
 
+  async function loadSample() {
+    setSampleLoading(true);
+    setSubmitError(null);
+    try {
+      const res = await api.loadSampleStatement();
+      setSummary({ imported: res.imported, skipped: res.skipped_duplicates, matched: res.debts_auto_matched });
+      toast(`${res.imported} verified transactions loaded!`, "success");
+      setFilter(null);
+      setLimit(PAGE);
+      setRefresh((n) => n + 1);
+    } catch (e) {
+      setSubmitError(errorMessage(e));
+      toast(errorMessage(e), "error");
+    } finally {
+      setSampleLoading(false);
+    }
+  }
+
+  async function runSimulate() {
+    const amt = parseFloat(simAmount);
+    if (isNaN(amt) || amt <= 0) {
+      toast("Enter a valid payment amount", "error");
+      return;
+    }
+    setSimBusy(true);
+    setSubmitError(null);
+    try {
+      const res = await api.simulateMpesa({
+        amount: amt,
+        customer_name: simName.trim() || "Customer",
+        phone: simPhone.trim(),
+      });
+      if (res.result?.debt_matched) {
+        toast(`🎉 Auto-cleared debt for ${simName}! KSh ${amt.toLocaleString()} recorded.`, "success");
+      } else {
+        toast(`💰 M-Pesa Payment of KSh ${amt.toLocaleString()} received into Till!`, "success");
+      }
+      setRefresh((n) => n + 1);
+    } catch (e) {
+      setSubmitError(errorMessage(e));
+      toast(errorMessage(e), "error");
+    } finally {
+      setSimBusy(false);
+    }
+  }
+
   async function changeCategory(tx: Transaction, category: Category) {
     setPicking(null);
     if (tx.category === category) return;
@@ -116,9 +167,10 @@ export default function ImportPage() {
         <p className="text-ink-soft">Add your statement or paste SMS messages. We sort them for you.</p>
       </div>
 
-      <div role="tablist" aria-label="Import method" className="grid grid-cols-2 gap-1 rounded-md border-2 border-ink bg-card p-1">
+      <div role="tablist" aria-label="Import method" className="grid grid-cols-3 gap-1 rounded-md border-2 border-ink bg-card p-1">
         {(
           [
+            ["daraja", "Live Daraja API", Zap],
             ["csv", "Statement file", FileUp],
             ["sms", "Paste SMS", MessageSquareText],
           ] as const
@@ -132,54 +184,143 @@ export default function ImportPage() {
               setMode(value);
               setSubmitError(null);
             }}
-            className={`flex min-h-[44px] items-center justify-center gap-2 rounded-sm font-bold transition-colors duration-200 ${mode === value ? "bg-maize text-ink" : "text-ink-soft"}`}
+            className={`flex min-h-[44px] items-center justify-center gap-1.5 sm:gap-2 rounded-sm font-bold text-xs sm:text-sm transition-colors duration-200 ${mode === value ? "bg-maize text-ink" : "text-ink-soft"}`}
           >
-            <Icon aria-hidden className="h-5 w-5" />
+            <Icon aria-hidden className="h-4 w-4 sm:h-5 sm:w-5" />
             {label}
           </button>
         ))}
       </div>
 
       <section className="panel p-4">
-        {mode === "csv" ? (
-          <div className="space-y-3">
-            <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-ink/50 bg-paper px-4 py-5 text-center hover:border-cobalt">
-              <FileUp aria-hidden className="h-8 w-8 text-cobalt" />
-              {file ? (
-                <span>
-                  <span className="block break-all font-bold">{file.name}</span>
-                  <span className="text-sm text-ink-soft">{formatBytes(file.size)}. Tap to choose another.</span>
-                </span>
-              ) : (
-                <span>
-                  <span className="block font-bold">Choose statement (.csv)</span>
-                  <span className="text-sm text-ink-soft">From the M-Pesa app or Safaricom portal. Up to 5 MB.</span>
-                </span>
+        {mode === "daraja" ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-3 w-3 rounded-full bg-leaf animate-pulse" />
+              <p className="font-extrabold text-ink text-base">Safaricom Daraja C2B Live Webhook</p>
+            </div>
+            <p className="text-sm text-ink-soft">
+              Direct integration with Safaricom M-Pesa. Customer payments at your Till flow automatically into your shop&apos;s ledger with zero manual effort.
+            </p>
+
+            <div className="rounded-md border-2 border-rule bg-paper p-4 space-y-3">
+              <p className="font-bold text-sm text-ink">Simulate a Live M-Pesa Payment</p>
+              <p className="text-xs text-ink-soft">Test what happens when a customer pays at the till right now:</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-ink-soft mb-1">Amount (KSh)</label>
+                  <input
+                    type="number"
+                    value={simAmount}
+                    onChange={(e) => setSimAmount(e.target.value)}
+                    className="field font-bold text-base py-1.5"
+                    placeholder="1500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-ink-soft mb-1">Customer Name</label>
+                  <input
+                    type="text"
+                    value={simName}
+                    onChange={(e) => setSimName(e.target.value)}
+                    className="field py-1.5"
+                    placeholder="Peter Kamau"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-ink-soft mb-1">Phone Number (254...)</label>
+                <input
+                  type="tel"
+                  value={simPhone}
+                  onChange={(e) => setSimPhone(e.target.value)}
+                  className="field py-1.5"
+                  placeholder="+254722998877"
+                />
+              </div>
+
+              <Button
+                type="button"
+                size="md"
+                variant="primary"
+                className="w-full mt-2"
+                loading={simBusy}
+                onClick={runSimulate}
+              >
+                ⚡ Receive Live M-Pesa Payment
+              </Button>
+            </div>
+          </div>
+        ) : mode === "csv" ? (
+          <div className="space-y-4">
+            {/* Quick 1-Click Presentation Banner */}
+            <div className="rounded-md border-2 border-dashed border-cobalt bg-maize/20 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-bold text-sm text-ink flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-cobalt" /> Pitch & Demo Mode
+                </p>
+                <p className="text-xs text-ink-soft mt-0.5">
+                  Preload 150 verified shop transactions with sales, utilities, and suppliers.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="md"
+                variant="primary"
+                loading={sampleLoading}
+                onClick={loadSample}
+                className="shrink-0"
+              >
+                Load 150 Transactions
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-ink/50 bg-paper px-4 py-5 text-center hover:border-cobalt">
+                <FileUp aria-hidden className="h-8 w-8 text-cobalt" />
+                {file ? (
+                  <span>
+                    <span className="block break-all font-bold">{file.name}</span>
+                    <span className="text-sm text-ink-soft">{formatBytes(file.size)}. Tap to choose another.</span>
+                  </span>
+                ) : (
+                  <span>
+                    <span className="block font-bold">Choose statement (.csv)</span>
+                    <span className="text-sm text-ink-soft">From the M-Pesa app or Safaricom portal. Up to 5 MB.</span>
+                  </span>
+                )}
+                <input ref={fileInput} type="file" accept=".csv,text/csv" className="sr-only" onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
+              </label>
+              {fileError && (
+                <p role="alert" className="text-sm font-bold text-chili">
+                  {fileError}
+                </p>
               )}
-              <input ref={fileInput} type="file" accept=".csv,text/csv" className="sr-only" onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
-            </label>
-            {fileError && (
-              <p role="alert" className="text-sm font-bold text-chili">
-                {fileError}
-              </p>
-            )}
+            </div>
+
+            <Button className="mt-2" size="lg" block disabled={!canSubmit} loading={busy} onClick={submit}>
+              Import statement
+            </Button>
           </div>
         ) : (
-          <label className="block">
-            <span className="label">Paste one or more M-Pesa messages</span>
-            <textarea
-              className="field min-h-[160px] py-2 leading-snug"
-              value={sms}
-              onChange={(e) => setSms(e.target.value)}
-              placeholder="SK01YUUM7K Confirmed. You have received Ksh1,600.00 from John Otieno 254731829405 on 1/9/26 at 12:49 PM…"
-              maxLength={20000}
-            />
-          </label>
+          <div className="space-y-3">
+            <label className="block">
+              <span className="label">Paste one or more M-Pesa messages</span>
+              <textarea
+                className="field min-h-[160px] py-2 leading-snug"
+                value={sms}
+                onChange={(e) => setSms(e.target.value)}
+                placeholder="SK01YUUM7K Confirmed. You have received Ksh1,600.00 from John Otieno 254731829405 on 1/9/26 at 12:49 PM…"
+                maxLength={20000}
+              />
+            </label>
+            <Button className="mt-2" size="lg" block disabled={!canSubmit} loading={busy} onClick={submit}>
+              Add messages
+            </Button>
+          </div>
         )}
 
-        <Button className="mt-4" size="lg" block disabled={!canSubmit} loading={busy} onClick={submit}>
-          {mode === "csv" ? "Import statement" : "Add messages"}
-        </Button>
         {submitError && (
           <div className="mt-3">
             <ErrorState message={submitError} compact />

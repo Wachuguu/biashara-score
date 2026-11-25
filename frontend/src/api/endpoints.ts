@@ -49,4 +49,15 @@ export const api = {
   score: () => request<Score>("/score"),
   lenderPdf: () =>
     request<Blob>("/reports/lender-pdf", { query: { format: "binary" }, expect: "blob", timeoutMs: 60_000 }),
+
+  // Safaricom Daraja M-Pesa Live Integration & Pitch Tools
+  simulateMpesa: (input: { amount: number; phone?: string; customer_name?: string }) =>
+    request<{ status: string; simulated: boolean; result: { debt_matched: boolean; transaction: any } }>("/mpesa/simulate", {
+      method: "POST",
+      json: input,
+    }),
+  loadSampleStatement: () =>
+    request<{ status: string; imported: number; skipped_duplicates: number; debts_auto_matched: number }>("/statements/sample", {
+      method: "POST",
+    }),
 };
