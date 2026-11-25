@@ -29,8 +29,8 @@ Globals:
         DYNAMODB_BUSINESS_TABLE: !Ref BusinessesTable
         DYNAMODB_DEBTS_TABLE: !Ref DebtsTable
         S3_STATEMENTS_BUCKET: !Ref StatementsBucket
-        CORS_ALLOWED_ORIGIN: !If [IsProd, !Ref CorsAllowedOrigin, 'http://localhost:3000']
-        MOCK_AWS: 'false'
+        CORS_ALLOWED_ORIGIN: !If [IsProd, !Ref CorsAllowedOrigin, '*']
+        MOCK_AWS: !If [IsProd, 'false', 'true']
 
 Resources:
   # ============================================================================
@@ -187,7 +187,6 @@ Resources:
     Properties:
       Name: !Sub 'biashara-api-${Environment}'
       Auth:
-        DefaultAuthorizer: CognitoJwtAuthorizer
         Authorizers:
           CognitoJwtAuthorizer:
             IdentitySource: '$request.header.Authorization'
@@ -197,11 +196,11 @@ Resources:
               Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'
       CorsConfiguration:
         AllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
-        AllowHeaders: ['Content-Type', 'Authorization']
+        AllowHeaders: ['Content-Type', 'Authorization', 'X-Business-Id']
         AllowOrigins: !If
           - IsProd
           - [!Ref CorsAllowedOrigin]
-          - ['http://localhost:3000', 'http://127.0.0.1:3000']
+          - ['*']
 
   # ============================================================================
   # AWS Lambda Functions with Least-Privilege IAM Policies

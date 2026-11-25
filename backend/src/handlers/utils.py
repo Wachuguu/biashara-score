@@ -27,7 +27,7 @@ def get_cors_headers(origin: Optional[str] = None) -> Dict[str, str]:
     configured_origin = os.getenv("CORS_ALLOWED_ORIGIN", "https://app.biasharascore.com")
 
     if mock or env == "dev":
-        allowed = origin if origin in ["http://localhost:3000", "http://127.0.0.1:3000"] else "http://localhost:3000"
+        allowed = origin if origin else "*"
         allowed_headers = "Content-Type,Authorization,X-Business-Id"
     else:
         allowed = configured_origin

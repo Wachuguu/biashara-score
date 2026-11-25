@@ -83,7 +83,10 @@ class AfricaTalkingSMSClient:
                 }
             }
 
-        import requests
+        import urllib.request
+        import urllib.parse
+        import json
+
         is_sandbox = self.username.lower() == "sandbox"
         url = (
             "https://api.sandbox.africastalking.com/version1/messaging"
@@ -103,8 +106,18 @@ class AfricaTalkingSMSClient:
         if self.sender_id and not is_sandbox:
             data["from"] = self.sender_id
 
-        response = requests.post(url, headers=headers, data=data, timeout=10)
-        return response.json()
+        encoded_data = urllib.parse.urlencode(data).encode("utf-8")
+        req = urllib.request.Request(url, data=encoded_data, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_body = response.read().decode("utf-8")
+                return json.loads(res_body)
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8")
+            try:
+                return json.loads(error_body)
+            except Exception:
+                return {"status": "error", "code": e.code, "message": error_body}
 
 
 sms_client = AfricaTalkingSMSClient()
